@@ -30,74 +30,86 @@ const PAGES = [
       console.log(`Scraping: ${pageInfo.url}`);
       await page.goto(pageInfo.url, { waitUntil: 'networkidle2', timeout: 30000 });
 
-      const squadFixtures = await page.evaluate((info) => {
-        const matches = [];
+      const matchData = await page.evaluate((info) => {
+        let teamsText = '';
+        let metaText = '';
 
-        // 1. Target specific match cards inside sub-pages first
+        // 1. Look for specific match containers first
         const matchCards = document.querySelectorAll('.match-card, .fixture-card, .fixture-item');
-
-        if (matchCards.length > 0) {
-          matchCards.forEach((card) => {
-            const titleEl = card.querySelector('.match-title, .fixture-teams, strong');
-            const metaEl = card.querySelector('.match-location, .date-header, .fixture-meta');
-
-            if (titleEl) {
-              matches.push({
-                squad: info.squad,
-                sport: info.sport,
-                badgeClass: info.badgeClass,
-                teams: titleEl.textContent.trim(),
-                dateStr: metaEl ? metaEl.textContent.trim() : '',
-                url: info.url
-              });
-            }
-          });
-        } else {
-          // 2. Fallback for custom Elementor HTML widgets
-          const widgets = document.querySelectorAll('.elementor-widget-html');
-          widgets.forEach((widget) => {
-            const clone = widget.cloneNode(true);
-            
-            // Strictly delete all internal CSS or JS elements
-            const garbage = clone.querySelectorAll('style, script, head, link');
-            garbage.forEach(el => el.remove());
-
-            const cleanText = clone.textContent.replace(/\s+/g, ' ').trim();
-
-            if (cleanText.toLowerCase().includes(' vs ') || cleanText.toLowerCase().includes(' v ')) {
-              const strongEl = clone.querySelector('strong');
-              
-              let teamsText = strongEl ? strongEl.textContent.trim() : '';
-              if (!teamsText || teamsText.length > 80) {
-                teamsText = `${info.squad} Match`;
-              }
-
-              matches.push({
-                squad: info.squad,
-                sport: info.sport,
-                badgeClass: info.badgeClass,
-                teams: teamsText,
-                dateStr: 'Check team page for kickoff time',
-                url: info.url
-              });
-            }
-          });
+        
+        for (const card of matchCards) {
+          const title = card.querySelector('.match-title, .fixture-teams, strong');
+          const meta = card.querySelector('.match-location, .date-header, .fixture-meta');
+          
+          if (title && !title.textContent.includes('Fav Move:')) {
+            teamsText = title.textContent.trim();
+            if (meta) metaText = meta.textContent.trim();
+            break;
+          }
         }
 
-        return matches;
+        // 2. Fallback scan through Elementor widgets
+        if (!teamsText) {
+          const widgets = document.querySelectorAll('.elementor-widget-html');
+          
+          for (const widget of widgets) {
+            const clone = widget.cloneNode(true);
+            
+            // Clean out scripts, styles, and unwanted metadata
+            const junk = clone.querySelectorAll('style, script, head, link, .fav-move');
+            junk.forEach(el => el.remove());
+
+            const text = clone.textContent.replace(/\s+/g, ' ').trim();
+
+            if ((text.toLowerCase().includes(' vs ') || text.toLowerCase().includes(' v ')) && !text.includes('Fav Move:')) {
+              // Target strong or bold tags containing "vs" or "v"
+              const strongs = clone.querySelectorAll('strong, b, p');
+              for (const s of strongs) {
+                const sText = s.textContent.trim();
+                if ((sText.toLowerCase().includes(' vs ') || sText.toLowerCase().includes(' v ')) && !sText.includes('Fav Move:')) {
+                  teamsText = sText;
+                  break;
+                }
+              }
+
+              if (!teamsText) {
+                // If text is messy, extract the first sentence containing "vs"
+                const matchString = text.split('.').find(str => str.toLowerCase().includes(' vs ') || str.toLowerCase().includes(' v '));
+                if (matchString) teamsText = matchString.trim();
+              }
+
+              metaText = 'Check team page for kickoff time';
+              break;
+            }
+          }
+        }
+
+        // 3. Fallback squad title if no explicitly clean match text is isolated
+        if (!teamsText || teamsText.includes('Fav Move:')) {
+          teamsText = `${info.squad} Match`;
+          metaText = 'See details on team page';
+        }
+
+        return {
+          squad: info.squad,
+          sport: info.sport,
+          badgeClass: info.badgeClass,
+          teams: teamsText,
+          dateStr: metaText,
+          url: info.url
+        };
       }, pageInfo);
 
-      // Take only the first match per squad
-      if (squadFixtures.length > 0) {
-        allFixtures.push(squadFixtures[0]);
+      if (matchData) {
+        allFixtures.push(matchData);
       }
     } catch (err) {
-      console.error(`Error on ${pageInfo.url}:`, err.message);
+      console.error(`Error scraping ${pageInfo.url}:`, err.message);
     }
   }
 
   await browser.close();
 
   fs.writeFileSync('fixtures.json', JSON.stringify(allFixtures, null, 2));
-  console.log(`Successfully compiled ${allFixtures.length} clean fixtures.`);
+  console.log(`Saved ${allFixtures.length} clean fixtures into fixtures.json`);
 })();
