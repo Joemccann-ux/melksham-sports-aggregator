@@ -3,23 +3,23 @@
     "squad": "Melksham Town 1st",
     "sport": "FOOTBALL",
     "badgeClass": "badge-football",
-    "teams": "Melksham Town 1st Fixtures",
-    "dateStr": "Check team page for kickoff time",
+    "teams": "Melksham Town 1st",
+    "dateStr": "No fixture scheduled this week",
     "url": "https://melkshamnews.com/melksham-town-fc-men-1st-team/"
   },
   {
     "squad": "Melksham Town Res",
     "sport": "FOOTBALL",
     "badgeClass": "badge-football",
-    "teams": "Melksham Town FC Res vs Devizes Town FC Res P",
-    "dateStr": "00 SEPTEMBER 2026",
+    "teams": "Melksham Town FC Res vs Devizes Town FC Res P Meads of Melk",
+    "dateStr": "Check team page for kickoff time",
     "url": "https://melkshamnews.com/melksham-town-fc-res/"
   },
   {
     "squad": "FOF FC",
     "sport": "FOOTBALL",
     "badgeClass": "badge-football",
-    "teams": "Wessex Albion FC vs FOF FC",
+    "teams": "Wessex Albion FC vs FOF FC Stanley Park Sports Ground S",
     "dateStr": "Check team page for kickoff time",
     "url": "https://melkshamnews.com/fof-mens-1st-xi/"
   },
@@ -28,7 +28,7 @@
     "sport": "FOOTBALL",
     "badgeClass": "badge-football",
     "teams": "26 Salisbury FC Women vs Melksham Town FC Ladies 14",
-    "dateStr": "4 Marlborough",
+    "dateStr": "Check team page for kickoff time",
     "url": "https://melkshamnews.com/melksham-town-fc-ladies/"
   },
   {
@@ -36,7 +36,7 @@
     "sport": "FOOTBALL",
     "badgeClass": "badge-football",
     "teams": "Melksham Town FC Vets vs Bishops Cannings FC Vets VMW Meads",
-    "dateStr": "45 OCTOBER 2026",
+    "dateStr": "Check team page for kickoff time",
     "url": "https://melkshamnews.com/melksham-town-fc-vets/"
   },
   {
@@ -83,7 +83,7 @@
     "squad": "RFC 16s Bucks",
     "sport": "RUGBY",
     "badgeClass": "badge-rugby",
-    "teams": "Sherborne U16s vs Melksham U16s",
+    "teams": "Sherborne U16s vs Melksham U16s Sherborne RFC",
     "dateStr": "Check team page for kickoff time",
     "url": "https://melkshamnews.com/melksham-rfc-16s-the-bucks/"
   },
@@ -92,7 +92,7 @@
     "sport": "RUGBY",
     "badgeClass": "badge-rugby",
     "teams": "Kingswood Athenas vs Melksham Fawns U14s Sun",
-    "dateStr": "11 Oct",
+    "dateStr": "Check team page for kickoff time",
     "url": "https://melkshamnews.com/melksham-fawns-u14/"
   }
 ]
