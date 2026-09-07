@@ -18,7 +18,7 @@ const PAGES = [
 ];
 
 (async () => {
-  // CALCULATE ACTIVE MONDAY-SUNDAY WEEK WINDOW
+  // ACTIVE MONDAY TO SUNDAY WINDOW
   const now = new Date();
   const dayOfWeek = now.getDay();
   const distanceToMonday = (dayOfWeek === 0 ? -6 : 1 - dayOfWeek);
@@ -31,7 +31,7 @@ const PAGES = [
   sundayThisWeek.setDate(mondayThisWeek.getDate() + 6);
   sundayThisWeek.setHours(23, 59, 59, 999);
 
-  console.log(`Active Week Window: ${mondayThisWeek.toDateString()} to ${sundayThisWeek.toDateString()}`);
+  console.log(`Filtering active week: ${mondayThisWeek.toDateString()} to ${sundayThisWeek.toDateString()}`);
 
   const browser = await puppeteer.launch({
     headless: 'new',
@@ -48,9 +48,7 @@ const PAGES = [
 
       let foundFixture = null;
 
-      // -------------------------------------------------------------
-      // 1. RUGBY LOGIC: EXTRACT ICAL URL FROM HTML WIDGET & PARSE FEED
-      // -------------------------------------------------------------
+      // 1. RUGBY LOGIC: PARSE EMBEDDED ICAL LINK DIRECTLY FROM PAGE WIDGET
       if (pageInfo.sport === 'RUGBY') {
         const icalUrl = await page.evaluate(() => {
           const links = Array.from(document.querySelectorAll('a[href], [src]'));
@@ -70,7 +68,6 @@ const PAGES = [
         });
 
         if (icalUrl) {
-          console.log(`  Found iCal URL for ${pageInfo.squad}: ${icalUrl}`);
           try {
             const events = await ical.async.fromURL(icalUrl);
             for (const key in events) {
@@ -91,96 +88,85 @@ const PAGES = [
               }
             }
           } catch (err) {
-            console.error(`  iCal error: ${err.message}`);
+            console.error(`iCal error for ${pageInfo.squad}:`, err.message);
           }
         }
       }
 
-      // -------------------------------------------------------------
-      // 2. FOOTBALL LOGIC: PARSE HARDCODED HTML TABLES / CARDS DIRECTLY
-      // -------------------------------------------------------------
+      // 2. FOOTBALL LOGIC: EXTRACT CLEAN TEAM MATCHUP & SEPARATE VENUE/TIME DETAILS
       if (!foundFixture) {
         foundFixture = await page.evaluate((info, monTime, sunTime) => {
-          let teams = '';
-          let dateStr = '';
+          let rawTeams = '';
+          let extractedMeta = '';
           let isThisWeek = false;
 
-          // Search HTML table rows
           const rows = Array.from(document.querySelectorAll('tr')).filter(r => !r.querySelector('th'));
           for (const row of rows) {
             const cells = Array.from(row.querySelectorAll('td')).map(td => td.textContent.trim());
-            const teamCell = cells.find(c => (c.toLowerCase().includes(' vs ') || c.toLowerCase().includes(' v ')) && c.length < 80);
+            const teamCell = cells.find(c => (c.toLowerCase().includes(' vs ') || c.toLowerCase().includes(' v ')) && c.length < 120);
 
             if (teamCell) {
-              teams = teamCell
-                .replace(/^(COMING|SEASON|UPCOMING|EASON|\d{2}\/\d{2})\s*(FIXTURE(S)?)?/i, '')
-                .replace(/\s+[P|VMW|P-P]\b/gi, '')
-                .replace(/\s+(Meads of Melk|Stanley Park).*$/i, '')
-                .trim();
+              rawTeams = teamCell;
 
-              const dateCell = cells.find(c => /\b(0?[1-9]|[12][0-9]|3[01])\b/.test(c) && /(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|Mon|Tue|Wed|Thu|Fri|Sat|Sun)/i.test(c));
-              if (dateCell) dateStr = dateCell.trim();
+              const dateCell = cells.find(c => /\b(0?[1-9]|[12][0-9]|3[01])\b/.test(c) || /(Mon|Tue|Wed|Thu|Fri|Sat|Sun)/i.test(c));
+              if (dateCell) extractedMeta = dateCell.trim();
               break;
             }
           }
 
-          // Search standalone card elements / bold elements
-          if (!teams) {
-            const cards = document.querySelectorAll('.match-card, .fixture-card, .fixture-item, strong, b');
-            for (const card of cards) {
-              const text = card.textContent.trim();
-              if ((text.toLowerCase().includes(' vs ') || text.toLowerCase().includes(' v ')) && text.length < 80) {
-                teams = text
-                  .replace(/^(COMING|SEASON|UPCOMING|EASON|\d{2}\/\d{2})\s*(FIXTURE(S)?)?/i, '')
-                  .replace(/\s+[P|VMW|P-P]\b/gi, '')
-                  .replace(/\s+(Meads of Melk|Stanley Park).*$/i, '')
-                  .trim();
-                break;
-              }
-            }
-          }
+          if (rawTeams) {
+            // Split out venue or time strings appended to team names
+            let cleanTeams = rawTeams
+              .replace(/^(COMING|SEASON|UPCOMING|EASON|\d{2}\/\d{2})\s*(FIXTURE(S)?)?/i, '')
+              .replace(/\s+P\b|\s+VMW\b/gi, '');
 
-          // Check Date Boundaries
-          if (dateStr) {
-            const parsedDate = new Date(dateStr);
-            if (!isNaN(parsedDate.getTime())) {
-              if (parsedDate >= new Date(monTime) && parsedDate <= new Date(sunTime)) {
+            // If time or venue exists inside team text string (e.g. "Cinder Lane • 15:00")
+            const extraDetailMatch = cleanTeams.match(/\s+([A-Za-z0-9\s]+•\s*\d{2}:\d{2}.*)$/);
+            if (extraDetailMatch) {
+              if (!extractedMeta) extractedMeta = extraDetailMatch[1].trim();
+              cleanTeams = cleanTeams.replace(extraDetailMatch[0], '').trim();
+            }
+
+            // Verify week match
+            if (extractedMeta) {
+              const parsedDate = new Date(extractedMeta);
+              if (!isNaN(parsedDate.getTime())) {
+                if (parsedDate >= new Date(monTime) && parsedDate <= new Date(sunTime)) {
+                  isThisWeek = true;
+                }
+              } else {
                 isThisWeek = true;
               }
             } else {
               isThisWeek = true;
             }
-          } else if (teams) {
-            // Include match if hardcoded in current week's active table
-            isThisWeek = true;
-          }
 
-          if (teams && isThisWeek) {
-            return {
-              squad: info.squad,
-              sport: info.sport,
-              badgeClass: info.badgeClass,
-              teams: teams,
-              dateStr: dateStr || 'Kickoff details on team page',
-              url: info.url
-            };
+            if (isThisWeek) {
+              return {
+                squad: info.squad,
+                sport: info.sport,
+                badgeClass: info.badgeClass,
+                teams: cleanTeams,
+                dateStr: extractedMeta || 'Kickoff details on team page',
+                url: info.url
+              };
+            }
           }
 
           return null;
         }, pageInfo, mondayThisWeek.getTime(), sundayThisWeek.getTime());
       }
 
-      // Add valid active matches only
       if (foundFixture) {
         activeFixtures.push(foundFixture);
       }
     } catch (err) {
-      console.error(`Error processing ${pageInfo.url}:`, err.message);
+      console.error(`Error scraping ${pageInfo.url}:`, err.message);
     }
   }
 
   await browser.close();
 
   fs.writeFileSync('fixtures.json', JSON.stringify(activeFixtures, null, 2));
-  console.log(`Saved ${activeFixtures.length} active weekly fixtures to fixtures.json`);
+  console.log(`Successfully compiled ${activeFixtures.length} clean fixtures into fixtures.json`);
 })();
