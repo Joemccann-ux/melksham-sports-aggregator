@@ -4,6 +4,7 @@
   "description": "Weekly automated fixture scraper for Melksham Independent News",
   "main": "scrape.js",
   "dependencies": {
+    "node-ical": "^0.16.1",
     "puppeteer": "^22.0.0"
   }
 }
