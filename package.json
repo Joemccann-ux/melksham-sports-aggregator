@@ -1,0 +1,9 @@
+{
+  "name": "melksham-sports-aggregator",
+  "version": "1.0.0",
+  "description": "Weekly automated fixture scraper for Melksham Independent News",
+  "main": "scrape.js",
+  "dependencies": {
+    "puppeteer": "^22.0.0"
+  }
+}
