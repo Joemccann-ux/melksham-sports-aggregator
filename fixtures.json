@@ -3,28 +3,33 @@
     "squad": "Melksham Town Res",
     "sport": "FOOTBALL",
     "badgeClass": "badge-football",
-    "teams": "/* Page Wrap */\n.sports-schedule-wrap {\n  max-width: 850px;\n  margin: 0 auto;\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif;\n  color: #222222;\n}\n\n/* Team Header (Main Title Banner) */\n.team-main-title {\n  background-color: #b91c1c; /* Melksham News Red */\n  color: #ffffff;\n  padding: 12px 18px;\n  font-size: 1.3rem;\n  font-weight: 700;\n  text-transform: uppercase;\n  border-radius: 6px;\n  margin-top: 30px;\n  margin-bottom: 20px;\n}\n\n/* Month Headers */\n.month-header {\n  color: #b91c1c;\n  font-size: 1.1rem;\n  font-weight: 800;\n  text-transform: uppercase;\n  letter-spacing: 0.5px;\n  margin-top: 25px;\n  margin-bottom: 10px;\n  padding-bottom: 6px;\n  border-bottom: 2px solid #eaeaea;\n}\n\n/* Date Subheadings */\n.date-header {\n  font-size: 1.05rem;\n  font-weight: 600;\n  color: #111111;\n  margin-top: 15px;\n  margin-bottom: 8px;\n}\n\n/* Match Event Card Box */\n.match-card {\n  background: #ffffff;\n  border: 1px solid #e5e7eb;\n  border-left: 5px solid #b91c1c; /* Red left accent bar */\n  border-radius: 6px;\n  padding: 14px 18px;\n  margin-bottom: 12px;\n  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);\n}\n\n.match-title {\n  font-size: 0.98rem;\n  font-weight: 700;\n  color: #111827;\n  margin: 0 0 4px 0;\n  display: flex;\n  align-items: center;\n  gap: 8px;\n}\n\n.match-icon {\n  font-size: 0.9rem;\n}\n\n.match-location {\n  font-size: 0.85rem;\n  color: #6b7280;\n  margin: 0;\n}\n\n/* Competition Badge */\n.comp-badge {\n  display: inline-block;\n  font-size: 0.75rem;\n  font-weight: 700;\n  color: #b91c1c;\n  background-color: #fee2e2;\n  padding: 2px 6px;\n  border-radius: 4px;\n  margin-left: 6px;\n  text-transform: uppercase;\n}\n\n\n\n\n  Melksham Town FC Res\n\n  \n  AUGUST 2026\n\n  Wednesday August 12\n  \n    ⚽ Melksham Town FC Res vs Devizes Town FC Res P\n    Meads of Melksham Community Football Stadium #2 • 19:45\n  \n\n  Saturday August 15\n  \n    ⚽ Melksham Town FC Res vs Faringdon Town FC P\n    Meads of Melksham Community Football Stadium #2 • 15:00\n  \n\n  Saturday August 22\n  \n    ⚽ Melksham Town FC Res vs Park United FC P\n    Meads of Melksham Community Football Stadium #2 • 15:00\n  \n\n  Saturday August 29\n  \n    ⚽ Melksham Town FC Res vs Bradford Town FC Res P\n    Meads of Melksham Community Football Stadium #2 • 15:00\n  \n\n\n  \n  SEPTEMBER 2026\n\n  Saturday September 5\n  \n    ⚽ Melksham Town FC Res vs Trowbridge Town FC P\n    Meads of Melksham Community Football Stadium #2 • 15:00\n  \n\n  Saturday September 12\n  \n    ⚽ Melksham Town FC Res vs Shrivenham FC P\n    Meads of Melksham Community Football Stadium #2 • 15:00\n  \n\n  Saturday September 19\n  \n    ⚽ Royal Wootton Bassett Town FC Dev vs Melksham Town FC Res P\n    Gerard Buxton Sports Ground • 15:00\n  \n\n  Saturday September 26\n  \n    ⚽ Melksham Town FC Res vs Pewsey Vale FC P\n    Meads of Melksham Community Football Stadium #2 • 15:00\n  \n\n\n  \n  OCTOBER 2026\n\n  Saturday October 3\n  \n    ⚽ Melksham Town FC Res vs Bemerton Heath Harlequins FC Res P\n    Meads of Melksham Community Football Stadium #2 • 15:00\n  \n\n  Wednesday October 7\n  \n    ⚽ Hungerford Town FC Dev vs Melksham Town FC Res P\n    Hungerford Town Football Club • 19:45\n  \n\n  Saturday October 17\n  \n    ⚽ Fairford Town FC Res vs Melksham Town FC Res P\n    Cinder Lane • 15:00\n  \n\n  Saturday October 24\n  \n    ⚽ Melksham Town FC Res vs Marlborough Town FC FTC\n    Meads of Melksham Community Football Stadium #2 • 14:30",
-    "dateStr": "⚽",
-    "url": "https://melkshamnews.com/melksham-town-fc-res/",
-    "scrapedAt": "2026-09-07T09:02:51.517Z"
+    "teams": "⚽ Melksham Town FC Res vs Devizes Town FC Res P",
+    "dateStr": "Wednesday August 12",
+    "url": "https://melkshamnews.com/melksham-town-fc-res/"
   },
   {
     "squad": "FOF FC",
     "sport": "FOOTBALL",
     "badgeClass": "badge-football",
     "teams": "Wessex Albion FC vs FOF FC",
-    "dateStr": "⚽",
-    "url": "https://melkshamnews.com/fof-mens-1st-xi/",
-    "scrapedAt": "2026-09-07T09:02:53.981Z"
+    "dateStr": "",
+    "url": "https://melkshamnews.com/fof-mens-1st-xi/"
+  },
+  {
+    "squad": "Melksham Ladies",
+    "sport": "FOOTBALL",
+    "badgeClass": "badge-football",
+    "teams": "Melksham Ladies Fixture",
+    "dateStr": "",
+    "url": "https://melkshamnews.com/melksham-town-fc-ladies/"
   },
   {
     "squad": "Melksham Vets",
     "sport": "FOOTBALL",
     "badgeClass": "badge-football",
-    "teams": "/* Page Wrap */\n.sports-schedule-wrap {\n  max-width: 850px;\n  margin: 0 auto;\n  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif;\n  color: #222222;\n}\n\n/* Team Header (Main Title Banner) */\n.team-main-title {\n  background-color: #b91c1c; /* Melksham News Red */\n  color: #ffffff;\n  padding: 12px 18px;\n  font-size: 1.3rem;\n  font-weight: 700;\n  text-transform: uppercase;\n  border-radius: 6px;\n  margin-top: 30px;\n  margin-bottom: 20px;\n}\n\n/* Month Headers */\n.month-header {\n  color: #b91c1c;\n  font-size: 1.1rem;\n  font-weight: 800;\n  text-transform: uppercase;\n  letter-spacing: 0.5px;\n  margin-top: 25px;\n  margin-bottom: 10px;\n  padding-bottom: 6px;\n  border-bottom: 2px solid #eaeaea;\n}\n\n/* Date Subheadings */\n.date-header {\n  font-size: 1.05rem;\n  font-weight: 600;\n  color: #111111;\n  margin-top: 15px;\n  margin-bottom: 8px;\n}\n\n/* Match Event Card Box */\n.match-card {\n  background: #ffffff;\n  border: 1px solid #e5e7eb;\n  border-left: 5px solid #b91c1c; /* Red left accent bar */\n  border-radius: 6px;\n  padding: 14px 18px;\n  margin-bottom: 12px;\n  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);\n}\n\n.match-title {\n  font-size: 0.98rem;\n  font-weight: 700;\n  color: #111827;\n  margin: 0 0 4px 0;\n  display: flex;\n  align-items: center;\n  gap: 8px;\n}\n\n.match-icon {\n  font-size: 0.9rem;\n}\n\n.match-location {\n  font-size: 0.85rem;\n  color: #6b7280;\n  margin: 0;\n}\n\n/* Competition Badge */\n.comp-badge {\n  display: inline-block;\n  font-size: 0.75rem;\n  font-weight: 700;\n  color: #b91c1c;\n  background-color: #fee2e2;\n  padding: 2px 6px;\n  border-radius: 4px;\n  margin-left: 6px;\n  text-transform: uppercase;\n}\n\n\n\n\n  Melksham Town FC Vets\n\n  \n  SEPTEMBER 2026\n\n  Tuesday September 1\n  \n    ⚽ Melksham Town FC Vets vs Bishops Cannings FC Vets VMW\n    Meads of Melksham Community Football Stadium #2 • 19:30\n  \n\n  Tuesday September 15\n  \n    ⚽ Barford Hornets FC Badgers vs Melksham Town FC Vets VMW\n    Tidworth Oval (Aspire Defence Ground) • 19:00\n  \n\n  Monday September 21\n  \n    ⚽ Melksham Town FC Vets vs Warminster Town FC Vets VMW\n    Meads of Melksham Community Football Stadium #2 • 19:30\n  \n\n  Monday September 28\n  \n    ⚽ Radstock Town FC Vets vs Melksham Town FC Vets VMW\n    Radstock Recreation Ground • 19:45\n  \n\n\n  \n  OCTOBER 2026\n\n  Monday October 5\n  \n    ⚽ Melksham Town FC Vets vs Calne Town FC Vets VMW\n    Meads of Melksham Community Football Stadium #2 • 19:30\n  \n\n  Monday October 12\n  \n    ⚽ Trowbridge Town FC Vets vs Melksham Town FC Vets VMW\n    Selwood Academy • 20:00\n  \n\n  Monday October 19\n  \n    ⚽ Melksham Town FC Vets vs Highworth Town FC Vets CV\n    Meads of Melksham Community Football Stadium #2 • 19:30\n  \n\n\n  \n  NOVEMBER 2026\n\n  Monday November 9\n  \n    ⚽ Melksham Town FC Vets vs Barford Hornets FC Badgers VMW\n    Meads of Melksham Community Football Stadium #2 • 19:30\n  \n\n  Monday November 16\n  \n    ⚽ Warminster Town FC Vets vs Melksham Town FC Vets VMW\n    Warminster Town Football Club • 19:45\n  \n\n  Monday November 23\n  \n    ⚽ Melksham Town FC Vets vs Radstock Town FC Vets VMW\n    Meads of Melksham Community Football Stadium #2 • 19:30\n  \n\n\n  \n  DECEMBER 2026\n\n  Monday December 7\n  \n    ⚽ Calne Town FC Vets vs Melksham Town FC Vets VMW\n    MOD Lyneham • 20:00\n  \n\n  Monday December 14\n  \n    ⚽ Melksham Town FC Vets vs Trowbridge Town FC Vets VMW\n    Meads of Melksham Community Football Stadium #2 • 19:30\n  \n\n\n  \n  JANUARY 2027\n\n  Monday January 4\n  \n    ⚽ Melksham Town FC Vets vs Bishops Cannings FC Vets VMW\n    Meads of Melksham Community Football Stadium #2 • 19:30\n  \n\n  Tuesday January 12\n  \n    ⚽ Barford Hornets FC Badgers vs Melksham Town FC Vets VMW\n    Tidworth Oval (Aspire Defence Ground) • 19:00\n  \n\n  Monday January 25\n  \n    ⚽ Trowbridge Town FC Vets vs Melksham Town FC Vets VMW\n    Selwood Academy • 20:00\n  \n\n\n  \n  FEBRUARY 2027\n\n  Monday February 1\n  \n    ⚽ Radstock Town FC Vets vs Melksham Town FC Vets VMW\n    Radstock Recreation Ground • 19:45\n  \n\n  Monday February 8\n  \n    ⚽ Melksham Town FC Vets vs Warminster Town FC Vets VMW\n    Meads of Melksham Community Football Stadium #2 • 19:30\n  \n\n  Monday February 15\n  \n    ⚽ Melksham Town FC Vets vs Calne Town FC Vets VMW\n    Meads of Melksham Community Football Stadium #2 • 19:30\n  \n\n  Friday February 26\n  \n    ⚽ Bishops Cannings FC Vets vs Melksham Town FC Vets VMW\n    Green Lane Playing Fields • 20:00",
-    "dateStr": "⚽",
-    "url": "https://melkshamnews.com/melksham-town-fc-vets/",
-    "scrapedAt": "2026-09-07T09:02:57.692Z"
+    "teams": "⚽ Melksham Town FC Vets vs Bishops Cannings FC Vets VMW",
+    "dateStr": "Tuesday September 1",
+    "url": "https://melkshamnews.com/melksham-town-fc-vets/"
   },
   {
     "squad": "RFC Women",
@@ -32,8 +37,7 @@
     "badgeClass": "badge-rugby",
     "teams": "Fav Move:",
     "dateStr": "Address details...",
-    "url": "https://melkshamnews.com/melksham-rfc-women-fixtures-2026-2027/",
-    "scrapedAt": "2026-09-07T09:03:00.024Z"
+    "url": "https://melkshamnews.com/melksham-rfc-women-fixtures-2026-2027/"
   },
   {
     "squad": "RFC Men 1st XV",
@@ -41,8 +45,7 @@
     "badgeClass": "badge-rugby",
     "teams": "Fav Move:",
     "dateStr": "Address details...",
-    "url": "https://melkshamnews.com/melksham-rfc-mens-1xv-fixtures-2026-2027/",
-    "scrapedAt": "2026-09-07T09:03:01.462Z"
+    "url": "https://melkshamnews.com/melksham-rfc-mens-1xv-fixtures-2026-2027/"
   },
   {
     "squad": "U18s Academy",
@@ -50,8 +53,7 @@
     "badgeClass": "badge-rugby",
     "teams": "Fav Move:",
     "dateStr": "Address details...",
-    "url": "https://melkshamnews.com/melksham-u18s-academy/",
-    "scrapedAt": "2026-09-07T09:03:05.628Z"
+    "url": "https://melkshamnews.com/melksham-u18s-academy/"
   },
   {
     "squad": "Fawns U16",
@@ -59,8 +61,7 @@
     "badgeClass": "badge-rugby",
     "teams": "Fav Move:",
     "dateStr": "Address details...",
-    "url": "https://melkshamnews.com/melksham-fawns-u16/",
-    "scrapedAt": "2026-09-07T09:03:07.617Z"
+    "url": "https://melkshamnews.com/melksham-fawns-u16/"
   },
   {
     "squad": "Fawns U14",
@@ -68,7 +69,6 @@
     "badgeClass": "badge-rugby",
     "teams": "Fav Move:",
     "dateStr": "Address details...",
-    "url": "https://melkshamnews.com/melksham-fawns-u14/",
-    "scrapedAt": "2026-09-07T09:03:10.778Z"
+    "url": "https://melkshamnews.com/melksham-fawns-u14/"
   }
 ]
