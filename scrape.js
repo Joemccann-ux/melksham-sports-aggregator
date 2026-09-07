@@ -17,26 +17,6 @@ const PAGES = [
   { squad: 'Fawns U14', sport: 'RUGBY', badgeClass: 'badge-rugby', url: 'https://melkshamnews.com/melksham-fawns-u14/' }
 ];
 
-// Helper to convert DD/MM/YY or DD/MM/YYYY to valid Date object
-function parseUkDate(str) {
-  if (!str) return null;
-  const clean = str.trim();
-
-  // Match DD/MM/YY or DD/MM/YYYY
-  const match = clean.match(/\b(\d{1,2})[\/\.-](\d{1,2})[\/\.-](\d{2,4})\b/);
-  if (match) {
-    const day = parseInt(match[1], 10);
-    const month = parseInt(match[2], 10) - 1; // 0-indexed
-    let year = parseInt(match[3], 10);
-    if (year < 100) year += 2000;
-    return new Date(year, month, day);
-  }
-
-  // Fallback to standard Date parser (handles "13 Sept 2026", "Sun, 13 Sep", etc.)
-  const d = new Date(clean);
-  return isNaN(d.getTime()) ? null : d;
-}
-
 (async () => {
   // Active Week: Monday 00:00:00 to Sunday 23:59:59
   const now = new Date();
@@ -51,7 +31,7 @@ function parseUkDate(str) {
   sundayThisWeek.setDate(mondayThisWeek.getDate() + 6);
   sundayThisWeek.setHours(23, 59, 59, 999);
 
-  console.log(`Active Week Window: ${mondayThisWeek.toDateString()} to ${sundayThisWeek.toDateString()}`);
+  console.log(`Filtering active week: ${mondayThisWeek.toDateString()} to ${sundayThisWeek.toDateString()}`);
 
   const browser = await puppeteer.launch({
     headless: 'new',
@@ -68,7 +48,7 @@ function parseUkDate(str) {
 
       let foundFixture = null;
 
-      // 1. RUGBY LOGIC: PARSE EMBEDDED ICAL LINK
+      // 1. RUGBY LOGIC: PARSE EMBEDDED ICAL LINK DIRECTLY
       if (pageInfo.sport === 'RUGBY') {
         const icalUrl = await page.evaluate(() => {
           const links = Array.from(document.querySelectorAll('a[href], [src]'));
@@ -113,9 +93,9 @@ function parseUkDate(str) {
         }
       }
 
-      // 2. FOOTBALL LOGIC: DOM TABLE PARSER WITH UK DATE HANDLING
+      // 2. FOOTBALL LOGIC: PARSE HTML TABLE MATCHUPS DIRECTLY
       if (!foundFixture) {
-        const rawMatch = await page.evaluate(() => {
+        foundFixture = await page.evaluate((info) => {
           const rows = Array.from(document.querySelectorAll('tr')).filter(r => !r.querySelector('th'));
           for (const row of rows) {
             const cells = Array.from(row.querySelectorAll('td')).map(td => td.textContent.trim());
@@ -125,6 +105,7 @@ function parseUkDate(str) {
               let cleanTeams = teamCell;
               let extraVenueOrTime = '';
 
+              // Cut off team name cleanly at team suffix boundary
               const teamBoundaryRegex = /^(.+?\s+(?:VS|vs|v|V)\s+.+?(?:Res|Vets|Ladies|FC|XI|XV|Town|United|City))\s+(.*)$/i;
               const match = cleanTeams.match(teamBoundaryRegex);
 
@@ -135,41 +116,21 @@ function parseUkDate(str) {
 
               cleanTeams = cleanTeams.replace(/\s+[P|VMW|P-P]\b/gi, '').trim();
 
-              const dateCell = cells.find(c => /\b\d{1,2}[\/\.-]\d{1,2}[\/\.-]\d{2,4}\b/.test(c) || /\b(0?[1-9]|[12][0-9]|3[01])\b/.test(c) || /(Mon|Tue|Wed|Thu|Fri|Sat|Sun)/i.test(c));
+              const dateCell = cells.find(c => /\b(0?[1-9]|[12][0-9]|3[01])\b/.test(c) || /(Mon|Tue|Wed|Thu|Fri|Sat|Sun)/i.test(c));
+              const displayDate = dateCell || extraVenueOrTime || 'Check team page for kickoff time';
 
               return {
+                squad: info.squad,
+                sport: info.sport,
+                badgeClass: info.badgeClass,
                 teams: cleanTeams,
-                rawDateStr: (dateCell || extraVenueOrTime || '').trim()
+                dateStr: displayDate,
+                url: info.url
               };
             }
           }
           return null;
-        });
-
-        if (rawMatch && rawMatch.teams) {
-          let isThisWeek = false;
-          let parsedDate = parseUkDate(rawMatch.rawDateStr);
-
-          if (parsedDate) {
-            if (parsedDate >= mondayThisWeek && parsedDate <= sundayThisWeek) {
-              isThisWeek = true;
-            }
-          } else {
-            // Include match if listed on active weekly table
-            isThisWeek = true;
-          }
-
-          if (isThisWeek) {
-            foundFixture = {
-              squad: pageInfo.squad,
-              sport: pageInfo.sport,
-              badgeClass: pageInfo.badgeClass,
-              teams: rawMatch.teams,
-              dateStr: rawMatch.rawDateStr || 'Kickoff details on team page',
-              url: pageInfo.url
-            };
-          }
-        }
+        }, pageInfo);
       }
 
       if (foundFixture) {
