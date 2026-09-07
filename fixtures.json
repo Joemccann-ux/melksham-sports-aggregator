@@ -3,16 +3,56 @@
     "squad": "Melksham Town Res",
     "sport": "FOOTBALL",
     "badgeClass": "badge-football",
-    "teams": "⚽ Melksham Town FC Res vs Devizes Town FC Res P",
-    "dateStr": "⚽",
+    "teams": "Melksham Town FC Res vs Devizes Town FC Res",
+    "dateStr": "00 SEPTEMBER 2026",
     "url": "https://melkshamnews.com/melksham-town-fc-res/"
+  },
+  {
+    "squad": "FOF FC",
+    "sport": "FOOTBALL",
+    "badgeClass": "badge-football",
+    "teams": "Wessex Albion FC vs FOF FC",
+    "dateStr": "Check team page for kickoff time",
+    "url": "https://melkshamnews.com/fof-mens-1st-xi/"
   },
   {
     "squad": "Melksham Vets",
     "sport": "FOOTBALL",
     "badgeClass": "badge-football",
-    "teams": "⚽ Melksham Town FC Vets vs Bishops Cannings FC Vets VMW",
-    "dateStr": "⚽",
+    "teams": "Melksham Town FC Vets vs Bishops Cannings FC Vets VMW Meads",
+    "dateStr": "45 OCTOBER 2026",
     "url": "https://melkshamnews.com/melksham-town-fc-vets/"
+  },
+  {
+    "squad": "RFC Men 2nd XV",
+    "sport": "RUGBY",
+    "badgeClass": "badge-rugby",
+    "teams": "Melksham II vs Bath Saracens",
+    "dateStr": "Check team page for kickoff time",
+    "url": "https://melkshamnews.com/melksham-rfc-2xv-fixtures-2026-2027/"
+  },
+  {
+    "squad": "U18s Academy",
+    "sport": "RUGBY",
+    "badgeClass": "badge-rugby",
+    "teams": "Chew Valley RFC U18W vs Melksham Academy Sun",
+    "dateStr": "Check team page for kickoff time",
+    "url": "https://melkshamnews.com/melksham-u18s-academy/"
+  },
+  {
+    "squad": "Fawns U16",
+    "sport": "RUGBY",
+    "badgeClass": "badge-rugby",
+    "teams": "Upcoming Fixture Walcats U16G vs Melksham Fawns Sunday",
+    "dateStr": "Check team page for kickoff time",
+    "url": "https://melkshamnews.com/melksham-fawns-u16/"
+  },
+  {
+    "squad": "RFC 16s Bucks",
+    "sport": "RUGBY",
+    "badgeClass": "badge-rugby",
+    "teams": "Sherborne U16s vs Melksham U16s",
+    "dateStr": "Check team page for kickoff time",
+    "url": "https://melkshamnews.com/melksham-rfc-16s-the-bucks/"
   }
 ]
