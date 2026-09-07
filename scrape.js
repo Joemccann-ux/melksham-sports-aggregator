@@ -18,7 +18,7 @@ const PAGES = [
 ];
 
 (async () => {
-  // Active Week: Monday 00:00:00 to Sunday 23:59:59
+  // ACTIVE MONDAY TO SUNDAY WINDOW
   const now = new Date();
   const dayOfWeek = now.getDay();
   const distanceToMonday = (dayOfWeek === 0 ? -6 : 1 - dayOfWeek);
@@ -46,9 +46,9 @@ const PAGES = [
       console.log(`Processing: ${pageInfo.url}`);
       await page.goto(pageInfo.url, { waitUntil: 'domcontentloaded', timeout: 30000 });
 
-      let foundFixture = null;
+      let squadFixtures = [];
 
-      // 1. RUGBY LOGIC: PARSE EMBEDDED ICAL LINK DIRECTLY
+      // 1. RUGBY LOGIC: PARSE ALL VEVENT ITEMS IN ICAL FEED
       if (pageInfo.sport === 'RUGBY') {
         const icalUrl = await page.evaluate(() => {
           const links = Array.from(document.querySelectorAll('a[href], [src]'));
@@ -75,15 +75,14 @@ const PAGES = [
               if (ev.type === 'VEVENT') {
                 const evDate = new Date(ev.start);
                 if (evDate >= mondayThisWeek && evDate <= sundayThisWeek) {
-                  foundFixture = {
+                  squadFixtures.push({
                     squad: pageInfo.squad,
                     sport: pageInfo.sport,
                     badgeClass: pageInfo.badgeClass,
                     teams: (ev.summary || `${pageInfo.squad} Fixture`).replace(/\s+[P|VMW]\b/gi, '').trim(),
                     dateStr: evDate.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }),
                     url: pageInfo.url
-                  };
-                  break;
+                  });
                 }
               }
             }
@@ -93,10 +92,12 @@ const PAGES = [
         }
       }
 
-      // 2. FOOTBALL LOGIC: PARSE HTML TABLE MATCHUPS DIRECTLY
-      if (!foundFixture) {
-        foundFixture = await page.evaluate((info) => {
+      // 2. FOOTBALL LOGIC: PARSE ALL MATCH ROWS IN HTML TABLES
+      if (squadFixtures.length === 0) {
+        const parsedRows = await page.evaluate((info) => {
+          const fixtures = [];
           const rows = Array.from(document.querySelectorAll('tr')).filter(r => !r.querySelector('th'));
+
           for (const row of rows) {
             const cells = Array.from(row.querySelectorAll('td')).map(td => td.textContent.trim());
             const teamCell = cells.find(c => (c.toLowerCase().includes(' vs ') || c.toLowerCase().includes(' v ')) && c.length < 120);
@@ -105,7 +106,6 @@ const PAGES = [
               let cleanTeams = teamCell;
               let extraVenueOrTime = '';
 
-              // Cut off team name cleanly at team suffix boundary
               const teamBoundaryRegex = /^(.+?\s+(?:VS|vs|v|V)\s+.+?(?:Res|Vets|Ladies|FC|XI|XV|Town|United|City))\s+(.*)$/i;
               const match = cleanTeams.match(teamBoundaryRegex);
 
@@ -119,22 +119,26 @@ const PAGES = [
               const dateCell = cells.find(c => /\b(0?[1-9]|[12][0-9]|3[01])\b/.test(c) || /(Mon|Tue|Wed|Thu|Fri|Sat|Sun)/i.test(c));
               const displayDate = dateCell || extraVenueOrTime || 'Check team page for kickoff time';
 
-              return {
+              fixtures.push({
                 squad: info.squad,
                 sport: info.sport,
                 badgeClass: info.badgeClass,
                 teams: cleanTeams,
                 dateStr: displayDate,
                 url: info.url
-              };
+              });
             }
           }
-          return null;
+          return fixtures;
         }, pageInfo);
+
+        if (parsedRows && parsedRows.length > 0) {
+          squadFixtures.push(...parsedRows);
+        }
       }
 
-      if (foundFixture) {
-        activeFixtures.push(foundFixture);
+      if (squadFixtures.length > 0) {
+        activeFixtures.push(...squadFixtures);
       }
     } catch (err) {
       console.error(`Error processing ${pageInfo.url}:`, err.message);
@@ -144,5 +148,5 @@ const PAGES = [
   await browser.close();
 
   fs.writeFileSync('fixtures.json', JSON.stringify(activeFixtures, null, 2));
-  console.log(`Successfully compiled ${activeFixtures.length} clean fixtures into fixtures.json`);
+  console.log(`Successfully compiled ${activeFixtures.length} active fixtures across all teams into fixtures.json`);
 })();
