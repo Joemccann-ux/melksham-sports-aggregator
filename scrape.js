@@ -25,7 +25,7 @@ const PAGES = [
   const page = await browser.newPage();
   const activeFixtures = [];
 
-  // CURRENT WEEK RANGE: Monday 00:00:00 to Sunday 23:59:59
+  // Active Monday-to-Sunday Date Window
   const now = new Date();
   const dayOfWeek = now.getDay();
   const distanceToMonday = (dayOfWeek === 0 ? -6 : 1 - dayOfWeek);
@@ -38,71 +38,62 @@ const PAGES = [
   sundayThisWeek.setDate(mondayThisWeek.getDate() + 6);
   sundayThisWeek.setHours(23, 59, 59, 999);
 
-  console.log(`Checking fixtures between ${mondayThisWeek.toDateString()} and ${sundayThisWeek.toDateString()}...`);
-
   for (const pageInfo of PAGES) {
     try {
-      console.log(`Checking: ${pageInfo.url}`);
+      console.log(`Scraping: ${pageInfo.url}`);
       await page.goto(pageInfo.url, { waitUntil: 'domcontentloaded', timeout: 30000 });
-      await new Promise(r => setTimeout(r, 4000));
+      await new Promise(r => setTimeout(r, 3000));
 
       const matchData = await page.evaluate((info, monTime, sunTime) => {
         let teams = '';
         let dateStr = '';
-        let isPlayingThisWeek = false;
+        let isThisWeek = false;
 
-        // Strip non-content DOM elements
-        const junk = document.querySelectorAll('style, script, head, link, nav, header, footer');
-        junk.forEach(el => el.remove());
+        // 1. EXTRACT STRUCTURED TABLE ROWS
+        const rows = Array.from(document.querySelectorAll('tr')).filter(r => !r.querySelector('th'));
 
-        const bodyText = document.body.innerText.replace(/\s+/g, ' ');
+        for (const row of rows) {
+          const cells = Array.from(row.querySelectorAll('td')).map(td => td.textContent.trim());
+          if (cells.length === 0) continue;
 
-        // 1. EXTRACT MATCH TITLE
-        const vsRegex = /([A-Za-z0-9\s.]{3,35}\s+(?:VS|vs|v|V)\s+[A-Za-z0-9\s.]{3,35})/g;
-        const matches = bodyText.match(vsRegex);
+          // Find team cell containing ' vs ' or ' v '
+          const teamCell = cells.find(c => (c.toLowerCase().includes(' vs ') || c.toLowerCase().includes(' v ')) && c.length < 90);
 
-        if (matches && matches.length > 0) {
-          for (let m of matches) {
-            let str = m.trim()
+          if (teamCell) {
+            // Clean match title
+            teams = teamCell
               .replace(/^(COMING|SEASON|UPCOMING|EASON|\d{2}\/\d{2})\s*(FIXTURE(S)?)?/i, '')
-              .replace(/^Upcoming Fixture\s+/i, '')
-              .split(/\s+(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|Meads|Stanley|Sherborne|Kingswood|\d{2}\/)/i)[0]
+              .replace(/\s+P\s+Meads.*|\s+VMW.*|\s+Stanley.*$/i, '')
               .trim();
 
-            if (str.length > 8 && str.length < 65 && !str.toLowerCase().includes('fav move')) {
-              teams = str;
-              break;
+            // Find valid date cell
+            const dateCell = cells.find(c => /\b(0?[1-9]|[12][0-9]|3[01])\b/.test(c) && /(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|Mon|Tue|Wed|Thu|Fri|Sat|Sun)/i.test(c));
+            
+            if (dateCell) {
+              dateStr = dateCell.trim();
+              
+              // Validate date against active week boundaries
+              const parsedDate = new Date(dateStr);
+              if (!isNaN(parsedDate.getTime())) {
+                if (parsedDate >= new Date(monTime) && parsedDate <= new Date(sunTime)) {
+                  isThisWeek = true;
+                }
+              } else {
+                isThisWeek = true;
+              }
             }
+            break;
           }
         }
 
-        // 2. EXTRACT DATE & CHECK WEEK BOUNDARIES
-        const dateRegex = /((?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)?\s?\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s?\d{0,4})/i;
-        const dateMatch = bodyText.match(dateRegex);
-
-        if (dateMatch) {
-          dateStr = dateMatch[0].trim();
-          
-          // Parse date to check against active week
-          const parsedDate = new Date(dateStr);
-          if (!isNaN(parsedDate.getTime())) {
-            if (parsedDate >= new Date(monTime) && parsedDate <= new Date(sunTime)) {
-              isPlayingThisWeek = true;
-            }
-          } else {
-            // Include match if the date string is specifically attached to this week's match card
-            isPlayingThisWeek = true;
-          }
-        }
-
-        // Return match data ONLY if team is actually playing this week
-        if (teams && isPlayingThisWeek) {
+        // Return fixture only if a valid matchup taking place this week exists
+        if (teams && isThisWeek) {
           return {
             squad: info.squad,
             sport: info.sport,
             badgeClass: info.badgeClass,
             teams: teams,
-            dateStr: dateStr || 'Check page for kickoff time',
+            dateStr: dateStr || 'Kickoff details on team page',
             url: info.url
           };
         }
@@ -121,5 +112,5 @@ const PAGES = [
   await browser.close();
 
   fs.writeFileSync('fixtures.json', JSON.stringify(activeFixtures, null, 2));
-  console.log(`Saved ${activeFixtures.length} active fixtures happening this week into fixtures.json`);
+  console.log(`Saved ${activeFixtures.length} valid weekly fixtures into fixtures.json`);
 })();
