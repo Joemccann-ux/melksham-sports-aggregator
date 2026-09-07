@@ -25,7 +25,7 @@ const PAGES = [
   const page = await browser.newPage();
   const activeFixtures = [];
 
-  // Define Monday 00:00 to Sunday 23:59 Active Window
+  // CURRENT WEEK WINDOW: Monday 00:00:00 to Sunday 23:59:59
   const now = new Date();
   const dayOfWeek = now.getDay();
   const distanceToMonday = (dayOfWeek === 0 ? -6 : 1 - dayOfWeek);
@@ -40,71 +40,62 @@ const PAGES = [
 
   for (const pageInfo of PAGES) {
     try {
-      console.log(`Scraping HTML elements on: ${pageInfo.url}`);
+      console.log(`Scraping: ${pageInfo.url}`);
       await page.goto(pageInfo.url, { waitUntil: 'networkidle2', timeout: 30000 });
-      await new Promise(r => setTimeout(r, 4000)); // Wait for external iCal/widgets to render DOM nodes
+      
+      // Force puppeteer to wait 5 seconds for dynamic iframe/iCal/Pitchero DOM nodes to inject
+      await new Promise(r => setTimeout(r, 5000));
 
       const matchData = await page.evaluate((info, monTime, sunTime) => {
         let teams = '';
         let dateStr = '';
         let isPlayingThisWeek = false;
 
-        // Clean out style, script, and nav junk
+        // Strip noise tags
         const junk = document.querySelectorAll('style, script, head, link, nav, header, footer');
         junk.forEach(el => el.remove());
 
-        // 1. SCAN RENDERED TABLE ROWS FIRST (Football & Static Tables)
+        // 1. EXTRACT FROM TABLES FIRST
         const rows = Array.from(document.querySelectorAll('tr')).filter(r => !r.querySelector('th'));
+
         for (const row of rows) {
           const cells = Array.from(row.querySelectorAll('td')).map(td => td.textContent.trim());
           const teamCell = cells.find(c => (c.toLowerCase().includes(' vs ') || c.toLowerCase().includes(' v ')) && c.length < 90);
 
           if (teamCell) {
-            teams = teamCell
-              .replace(/^(COMING|SEASON|UPCOMING|EASON|\d{2}\/\d{2})\s*(FIXTURE(S)?)?/i, '')
-              .replace(/\s+P\b|\s+VMW\b|\s+Meads.*|\s+Stanley.*$/i, '')
-              .trim();
+            teams = teamCell;
 
-            const dateCell = cells.find(c => /(Mon|Tue|Wed|Thu|Fri|Sat|Sun|\d{1,2}\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec))/i.test(c));
-            if (dateCell) dateStr = dateCell.trim();
+            // Find matching date cell
+            const dateCell = cells.find(c => /\b(0?[1-9]|[12][0-9]|3[01])\b/.test(c) || /(Mon|Tue|Wed|Thu|Fri|Sat|Sun)/i.test(c));
+            if (dateCell) dateStr = dateCell;
             break;
           }
         }
 
-        // 2. SCAN RENDERED ICAL / PITCHERO CARD CONTAINERS (Rugby Widgets)
+        // 2. FALLBACK TO CARD / ICAL NODES
         if (!teams) {
-          const cards = document.querySelectorAll('.match-card, .fixture-card, .fixture-item, .ical-event, [class*="fixture"]');
-          for (const card of cards) {
-            const titleEl = card.querySelector('h3, h4, .teams, .match-title, strong');
-            const dateEl = card.querySelector('.date, .match-date, .fixture-date, time, span');
+          const bodyText = document.body.innerText.replace(/\s+/g, ' ');
+          const vsMatch = bodyText.match(/([A-Za-z0-9\s.]{3,35}\s+(?:VS|vs|v|V)\s+[A-Za-z0-9\s.]{3,35})/i);
+          if (vsMatch) {
+            teams = vsMatch[1];
+          }
 
-            if (titleEl && titleEl.textContent.trim().length < 80) {
-              teams = titleEl.textContent.trim();
-              if (dateEl) dateStr = dateEl.textContent.trim();
-              break;
-            }
+          const dateMatch = bodyText.match(/((?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|Mon|Tue|Wed|Thu|Fri|Sat|Sun)?,?\s?\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s?\d{0,4})/i);
+          if (dateMatch) {
+            dateStr = dateMatch[1];
           }
         }
 
-        // 3. FALLBACK TO ELEMENTOR HTML NODES
-        if (!teams) {
-          const widgets = document.querySelectorAll('.elementor-widget-html');
-          for (const widget of widgets) {
-            const vsMatch = widget.textContent.match(/([A-Za-z0-9\s.]{3,35}\s+(?:VS|vs|v|V)\s+[A-Za-z0-9\s.]{3,35})/);
-            if (vsMatch) {
-              teams = vsMatch[1]
-                .replace(/^(COMING|SEASON|UPCOMING|EASON|\d{2}\/\d{2})\s*(FIXTURE(S)?)?/i, '')
-                .replace(/\s+P\b|\s+VMW\b|\s+Meads.*|\s+Stanley.*/i, '')
-                .trim();
-
-              const dateMatch = widget.textContent.match(/((?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)[a-z]*,?\s+\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s?\d{0,4})/i);
-              if (dateMatch) dateStr = dateMatch[1].trim();
-              break;
-            }
-          }
+        // 3. SANITIZE TEAM NAME NOISE
+        if (teams) {
+          teams = teams
+            .replace(/^(COMING|SEASON|UPCOMING|EASON|\d{2}\/\d{2})\s*(FIXTURE(S)?)?/i, '')
+            .replace(/\s+[P|VMW]\b/gi, '') // Strips " P" and " VMW"
+            .replace(/\s+(Meads of Melk|Stanley Park|Sherborne RFC|Melksham Rugby Club).*$/i, '')
+            .trim();
         }
 
-        // 4. VERIFY DATE FALLS WITHIN THIS WEEK (MONDAY - SUNDAY)
+        // 4. CHECK IF DATE FALLS IN THIS WEEK (Monday to Sunday)
         if (dateStr) {
           const parsedDate = new Date(dateStr);
           if (!isNaN(parsedDate.getTime())) {
@@ -112,24 +103,26 @@ const PAGES = [
               isPlayingThisWeek = true;
             }
           } else {
-            // Include match if the date string is structured inside the current card
+            // Include if match date string is specifically present on active card
             isPlayingThisWeek = true;
           }
+        } else {
+          // If match found on table row during active week crawl, retain match
+          if (teams) isPlayingThisWeek = true;
         }
 
-        // ONLY RETURN DATA IF PLAYING THIS WEEK
         if (teams && isPlayingThisWeek) {
           return {
             squad: info.squad,
             sport: info.sport,
             badgeClass: info.badgeClass,
             teams: teams,
-            dateStr: dateStr || 'Kickoff details on team page',
+            dateStr: dateStr || 'Check team page for kickoff time',
             url: info.url
           };
         }
 
-        return null; // Exclude non-playing teams
+        return null;
       }, pageInfo, mondayThisWeek.getTime(), sundayThisWeek.getTime());
 
       if (matchData) {
@@ -143,5 +136,5 @@ const PAGES = [
   await browser.close();
 
   fs.writeFileSync('fixtures.json', JSON.stringify(activeFixtures, null, 2));
-  console.log(`Saved ${activeFixtures.length} active weekly fixtures to fixtures.json`);
+  console.log(`Successfully compiled ${activeFixtures.length} clean active fixtures into fixtures.json`);
 })();
