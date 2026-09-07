@@ -31,72 +31,64 @@ const PAGES = [
       await page.goto(pageInfo.url, { waitUntil: 'networkidle2', timeout: 30000 });
 
       const matchData = await page.evaluate((info) => {
-        // 1. HARD REMOVE ANY DOM ELEMENTS CONTAINING "Fav Move:"
-        const allElements = document.querySelectorAll('*');
-        allElements.forEach(el => {
-          if (el.children.length === 0 && el.textContent.includes('Fav Move:')) {
-            el.remove();
-          }
-        });
-
         let teamsText = '';
         let metaText = '';
 
-        // 2. CHECK SPECIFIC MATCH CONTAINERS
-        const matchCards = document.querySelectorAll('.match-card, .fixture-card, .fixture-item');
-        for (const card of matchCards) {
-          const title = card.querySelector('.match-title, .fixture-teams, strong, b');
-          const meta = card.querySelector('.match-location, .date-header, .fixture-meta, p');
+        // Clean out junk tags immediately
+        const junk = document.querySelectorAll('style, script, head, link, nav, header, footer');
+        junk.forEach(el => el.remove());
 
-          if (title) {
-            const rawTitle = title.textContent.trim();
-            if (rawTitle && !rawTitle.toLowerCase().includes('fav move')) {
-              teamsText = rawTitle;
-              if (meta) metaText = meta.textContent.trim();
-              break;
-            }
+        // 1. FIRST TRY TARGETING INDIVIDUAL MATCH CONTAINERS
+        const cards = document.querySelectorAll('.match-card, .fixture-card, .fixture-item');
+        for (const card of cards) {
+          const title = card.querySelector('.match-title, .fixture-teams, strong');
+          const meta = card.querySelector('.match-location, .date-header, .fixture-meta');
+          if (title && title.textContent.trim().length < 100) {
+            teamsText = title.textContent.trim();
+            if (meta) metaText = meta.textContent.trim();
+            break;
           }
         }
 
-        // 3. FALLBACK: SCAN ELEMENTOR HTML WIDGETS
+        // 2. PARSE UNSTRUCTURED HTML DUMPS USING REGEX
         if (!teamsText) {
           const widgets = document.querySelectorAll('.elementor-widget-html');
           
           for (const widget of widgets) {
-            const clone = widget.cloneNode(true);
-            
-            // Delete scripts, styles, and unwanted metadata elements
-            const junk = clone.querySelectorAll('style, script, head, link');
-            junk.forEach(el => el.remove());
+            const text = widget.textContent.replace(/\s+/g, ' ').trim();
 
-            const cleanText = clone.textContent.replace(/\s+/g, ' ').trim();
+            if (text.toLowerCase().includes(' vs ') || text.toLowerCase().includes(' v ')) {
+              // Extract phrases surrounding 'vs' or 'v' (limit length to 80 chars)
+              const matchRegex = /([A-Za-z0-9\s]+(?:VS|vs|v|V)[A-Za-z0-9\s]+)/g;
+              const matches = text.match(matchRegex);
 
-            if ((cleanText.toLowerCase().includes(' vs ') || cleanText.toLowerCase().includes(' v ')) && !cleanText.toLowerCase().includes('fav move')) {
-              // Extract strong tags or paragraphs containing 'vs'
-              const bolds = clone.querySelectorAll('strong, b, p, h3, h4');
-              for (const b of bolds) {
-                const bText = b.textContent.trim();
-                if ((bText.toLowerCase().includes(' vs ') || bText.toLowerCase().includes(' v ')) && !bText.toLowerCase().includes('fav move')) {
-                  teamsText = bText;
-                  break;
+              if (matches && matches.length > 0) {
+                // Find first valid match phrase excluding page titles
+                for (let m of matches) {
+                  m = m.trim();
+                  if (m.length > 8 && m.length < 80 && !m.toLowerCase().includes('fixtures') && !m.toLowerCase().includes('results')) {
+                    teamsText = m;
+                    break;
+                  }
                 }
               }
 
-              if (!teamsText) {
-                // Isolate sentence with vs
-                const sentences = cleanText.split(/[\.\n]/);
-                const vsSentence = sentences.find(s => (s.toLowerCase().includes(' vs ') || s.toLowerCase().includes(' v ')) && !s.toLowerCase().includes('fav move'));
-                if (vsSentence) teamsText = vsSentence.trim();
+              // Extract date pattern if present (e.g. 27 Sept 2026 or Saturday 26 Sept)
+              const dateRegex = /((?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)?\s?\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sept|Oct|Nov|Dec)[a-z]*\s?\d{0,4})/i;
+              const dateMatch = text.match(dateRegex);
+              if (dateMatch) {
+                metaText = dateMatch[0].trim();
+              } else {
+                metaText = 'Check team page for kickoff time';
               }
 
-              metaText = 'Check team page for kickoff time';
-              break;
+              if (teamsText) break;
             }
           }
         }
 
-        // 4. GUARANTEED FALLBACK: USE CLEAN SQUAD NAME
-        if (!teamsText || teamsText.toLowerCase().includes('fav move')) {
+        // 3. CLEANUP & FALLBACK
+        if (!teamsText || teamsText.length > 80) {
           teamsText = `${info.squad} Fixtures`;
           metaText = 'See full schedule on team page';
         }
