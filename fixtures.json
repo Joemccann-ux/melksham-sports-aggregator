@@ -11,7 +11,7 @@
     "squad": "Melksham Town Res",
     "sport": "FOOTBALL",
     "badgeClass": "badge-football",
-    "teams": "Melksham Town FC Res vs Devizes Town FC Res P Meads of Melk",
+    "teams": "Melksham Town FC Res vs Devizes Town FC Res",
     "dateStr": "Check team page for kickoff time",
     "url": "https://melkshamnews.com/melksham-town-fc-res/"
   },
@@ -19,7 +19,7 @@
     "squad": "FOF FC",
     "sport": "FOOTBALL",
     "badgeClass": "badge-football",
-    "teams": "Wessex Albion FC vs FOF FC Stanley Park Sports Ground S",
+    "teams": "Wessex Albion FC vs FOF FC",
     "dateStr": "Check team page for kickoff time",
     "url": "https://melkshamnews.com/fof-mens-1st-xi/"
   },
@@ -27,7 +27,7 @@
     "squad": "Melksham Ladies",
     "sport": "FOOTBALL",
     "badgeClass": "badge-football",
-    "teams": "26 Salisbury FC Women vs Melksham Town FC Ladies 14",
+    "teams": "Salisbury FC Women vs Melksham Town FC Ladies 14",
     "dateStr": "Check team page for kickoff time",
     "url": "https://melkshamnews.com/melksham-town-fc-ladies/"
   },
@@ -35,7 +35,7 @@
     "squad": "Melksham Vets",
     "sport": "FOOTBALL",
     "badgeClass": "badge-football",
-    "teams": "Melksham Town FC Vets vs Bishops Cannings FC Vets VMW Meads",
+    "teams": "Melksham Town FC Vets vs Bishops Cannings FC Vets VMW",
     "dateStr": "Check team page for kickoff time",
     "url": "https://melkshamnews.com/melksham-town-fc-vets/"
   },
@@ -43,7 +43,7 @@
     "squad": "RFC Women",
     "sport": "RUGBY",
     "badgeClass": "badge-rugby",
-    "teams": "Melksham Women vs Buckingham Swans Ladies II Sunday 2",
+    "teams": "Melksham Women vs Buckingham Swans Ladies II",
     "dateStr": "Sunday 27 Sept 2026",
     "url": "https://melkshamnews.com/melksham-rfc-women-fixtures-2026-2027/"
   },
@@ -51,7 +51,7 @@
     "squad": "RFC Men 1st XV",
     "sport": "RUGBY",
     "badgeClass": "badge-rugby",
-    "teams": "Chippenham II vs Melksham Saturday 26 Sept 2026",
+    "teams": "Chippenham II vs Melksham",
     "dateStr": "Saturday 26 Sept 2026",
     "url": "https://melkshamnews.com/melksham-rfc-mens-1xv-fixtures-2026-2027/"
   },
@@ -59,7 +59,7 @@
     "squad": "RFC Men 2nd XV",
     "sport": "RUGBY",
     "badgeClass": "badge-rugby",
-    "teams": "Melksham II vs Bath Saracens Melksham Rugby Club",
+    "teams": "Melksham II vs Bath Saracens",
     "dateStr": "Check team page for kickoff time",
     "url": "https://melkshamnews.com/melksham-rfc-2xv-fixtures-2026-2027/"
   },
@@ -75,7 +75,7 @@
     "squad": "Fawns U16",
     "sport": "RUGBY",
     "badgeClass": "badge-rugby",
-    "teams": "Upcoming Fixture Walcats U16G vs Melksham Fawns Sunday",
+    "teams": "Walcats U16G vs Melksham Fawns",
     "dateStr": "Check team page for kickoff time",
     "url": "https://melkshamnews.com/melksham-fawns-u16/"
   },
@@ -83,7 +83,7 @@
     "squad": "RFC 16s Bucks",
     "sport": "RUGBY",
     "badgeClass": "badge-rugby",
-    "teams": "Sherborne U16s vs Melksham U16s Sherborne RFC",
+    "teams": "Sherborne U16s vs Melksham U16s",
     "dateStr": "Check team page for kickoff time",
     "url": "https://melkshamnews.com/melksham-rfc-16s-the-bucks/"
   },
