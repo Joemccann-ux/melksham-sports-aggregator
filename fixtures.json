@@ -1,26 +1,10 @@
 [
   {
-    "squad": "Melksham Town Res",
-    "sport": "FOOTBALL",
-    "badgeClass": "badge-football",
-    "teams": "⚽ Fairford Town FC Res vs Melksham Town FC Res\n    Cinder Lane • 15:00",
-    "dateStr": "Kickoff details on team page",
-    "url": "https://melkshamnews.com/melksham-town-fc-res/"
-  },
-  {
-    "squad": "FOF FC",
-    "sport": "FOOTBALL",
-    "badgeClass": "badge-football",
-    "teams": "Wessex Albion FC vs FOF FC",
-    "dateStr": "Kickoff details on team page",
-    "url": "https://melkshamnews.com/fof-mens-1st-xi/"
-  },
-  {
-    "squad": "Melksham Vets",
-    "sport": "FOOTBALL",
-    "badgeClass": "badge-football",
-    "teams": "⚽ Calne Town FC Vets vs Melksham Town FC Vets VMW\n    MOD Lyneham • 20:00",
-    "dateStr": "Kickoff details on team page",
-    "url": "https://melkshamnews.com/melksham-town-fc-vets/"
+    "squad": "Fawns U14",
+    "sport": "RUGBY",
+    "badgeClass": "badge-rugby",
+    "teams": "Kingswood Athenas – U14s Fawns",
+    "dateStr": "Sun, 13 Sept",
+    "url": "https://melkshamnews.com/melksham-fawns-u14/"
   }
 ]
