@@ -4,7 +4,7 @@
     "sport": "FOOTBALL",
     "badgeClass": "badge-football",
     "teams": "⚽ Melksham Town FC Res vs Devizes Town FC Res P",
-    "dateStr": "Wednesday August 12",
+    "dateStr": "Meads of Melksham Community Football Stadium #2 • 19:45",
     "url": "https://melkshamnews.com/melksham-town-fc-res/"
   },
   {
@@ -12,23 +12,15 @@
     "sport": "FOOTBALL",
     "badgeClass": "badge-football",
     "teams": "Wessex Albion FC vs FOF FC",
-    "dateStr": "",
+    "dateStr": "Check team page for kickoff time",
     "url": "https://melkshamnews.com/fof-mens-1st-xi/"
-  },
-  {
-    "squad": "Melksham Ladies",
-    "sport": "FOOTBALL",
-    "badgeClass": "badge-football",
-    "teams": "Melksham Ladies Fixture",
-    "dateStr": "",
-    "url": "https://melkshamnews.com/melksham-town-fc-ladies/"
   },
   {
     "squad": "Melksham Vets",
     "sport": "FOOTBALL",
     "badgeClass": "badge-football",
     "teams": "⚽ Melksham Town FC Vets vs Bishops Cannings FC Vets VMW",
-    "dateStr": "Tuesday September 1",
+    "dateStr": "Meads of Melksham Community Football Stadium #2 • 19:30",
     "url": "https://melkshamnews.com/melksham-town-fc-vets/"
   },
   {
@@ -36,7 +28,7 @@
     "sport": "RUGBY",
     "badgeClass": "badge-rugby",
     "teams": "Fav Move:",
-    "dateStr": "Address details...",
+    "dateStr": "Check team page for kickoff time",
     "url": "https://melkshamnews.com/melksham-rfc-women-fixtures-2026-2027/"
   },
   {
@@ -44,7 +36,7 @@
     "sport": "RUGBY",
     "badgeClass": "badge-rugby",
     "teams": "Fav Move:",
-    "dateStr": "Address details...",
+    "dateStr": "Check team page for kickoff time",
     "url": "https://melkshamnews.com/melksham-rfc-mens-1xv-fixtures-2026-2027/"
   },
   {
@@ -52,7 +44,7 @@
     "sport": "RUGBY",
     "badgeClass": "badge-rugby",
     "teams": "Fav Move:",
-    "dateStr": "Address details...",
+    "dateStr": "Check team page for kickoff time",
     "url": "https://melkshamnews.com/melksham-u18s-academy/"
   },
   {
@@ -60,7 +52,7 @@
     "sport": "RUGBY",
     "badgeClass": "badge-rugby",
     "teams": "Fav Move:",
-    "dateStr": "Address details...",
+    "dateStr": "Check team page for kickoff time",
     "url": "https://melkshamnews.com/melksham-fawns-u16/"
   },
   {
@@ -68,7 +60,7 @@
     "sport": "RUGBY",
     "badgeClass": "badge-rugby",
     "teams": "Fav Move:",
-    "dateStr": "Address details...",
+    "dateStr": "Check team page for kickoff time",
     "url": "https://melkshamnews.com/melksham-fawns-u14/"
   }
 ]
