@@ -27,55 +27,64 @@ const PAGES = [
 
   for (const pageInfo of PAGES) {
     try {
-      console.log(`Scraping table data from: ${pageInfo.url}`);
+      console.log(`Scraping: ${pageInfo.url}`);
       await page.goto(pageInfo.url, { waitUntil: 'networkidle2', timeout: 30000 });
 
       const matchData = await page.evaluate((info) => {
         let teamsText = '';
         let metaText = '';
 
-        // 1. SCRAPE HTML TABLE ROWS FIRST
+        // Clean out garbage elements
+        const junk = document.querySelectorAll('style, script, head, link, nav, header, footer');
+        junk.forEach(el => el.remove());
+
+        // STAGE 1: Check HTML Tables
         const tableRows = document.querySelectorAll('table tr');
-        
         for (const row of tableRows) {
-          // Skip table header rows
           if (row.querySelector('th')) continue;
-
           const cells = Array.from(row.querySelectorAll('td')).map(td => td.textContent.trim());
-          const rowText = cells.join(' ');
-
-          if (rowText.toLowerCase().includes(' vs ') || rowText.toLowerCase().includes(' v ')) {
-            // Locate cell containing team names
-            const vsCell = cells.find(c => c.toLowerCase().includes(' vs ') || c.toLowerCase().includes(' v '));
-            teamsText = vsCell || rowText;
-
-            // Extract date/time from adjacent cells if available
-            const dateCell = cells.find(c => /\d{1,2}[\/\.-]\d{1,2}/.test(c) || /(Mon|Tue|Wed|Thu|Fri|Sat|Sun)/i.test(c));
+          const vsCell = cells.find(c => c.toLowerCase().includes(' vs ') || c.toLowerCase().includes(' v '));
+          if (vsCell && vsCell.length < 80) {
+            teamsText = vsCell;
+            const dateCell = cells.find(c => /\d{1,2}/.test(c) || /(Mon|Tue|Wed|Thu|Fri|Sat|Sun)/i.test(c));
             if (dateCell) metaText = dateCell;
-
-            break; // Stop at first valid upcoming row
+            break;
           }
         }
 
-        // 2. FALLBACK FOR CARDS OR WIDGETS
+        // STAGE 2: Parse Third-Party / RFU Widgets using Regex
         if (!teamsText) {
-          const bolds = document.querySelectorAll('strong, b');
-          for (const b of bolds) {
-            const bText = b.textContent.trim();
-            if ((bText.toLowerCase().includes(' vs ') || bText.toLowerCase().includes(' v ')) && bText.length < 90) {
-              teamsText = bText;
-              break;
+          const bodyText = document.body.textContent.replace(/\s+/g, ' ').trim();
+
+          // Regex to capture "Team A VS Team B" up to a date or location
+          const vsRegex = /([A-Za-z0-9\s]{3,40}\s(?:VS|vs|v|V)\s[A-Za-z0-9\s]{3,40})/g;
+          const matches = bodyText.match(vsRegex);
+
+          if (matches && matches.length > 0) {
+            for (let m of matches) {
+              m = m.trim();
+              // Ignore generic titles or page headings
+              if (m.length > 8 && m.length < 70 && !m.toLowerCase().includes('fixtures') && !m.toLowerCase().includes('results') && !m.toLowerCase().includes('fav move')) {
+                teamsText = m;
+                break;
+              }
             }
           }
+
+          // Isolate first date string pattern (e.g., "Sunday 27 Sept 2026" or "26 Sept 2026")
+          const dateRegex = /((?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)?\s?\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sept|Oct|Nov|Dec)[a-z]*\s?\d{0,4})/i;
+          const dateMatch = bodyText.match(dateRegex);
+          if (dateMatch) {
+            metaText = dateMatch[0].trim();
+          }
         }
 
-        // 3. CLEANUP
-        if (!teamsText || teamsText.length > 90) {
+        // STAGE 3: Clean Fallback
+        if (!teamsText) {
           teamsText = `${info.squad} Fixtures`;
         }
-
         if (!metaText) {
-          metaText = 'Check team page for kickoff time';
+          metaText = 'Check page for kickoff time';
         }
 
         return {
@@ -99,5 +108,5 @@ const PAGES = [
   await browser.close();
 
   fs.writeFileSync('fixtures.json', JSON.stringify(allFixtures, null, 2));
-  console.log(`Successfully compiled ${allFixtures.length} clean table fixtures into fixtures.json`);
+  console.log(`Saved ${allFixtures.length} clean fixtures into fixtures.json`);
 })();
