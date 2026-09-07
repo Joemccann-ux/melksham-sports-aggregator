@@ -27,67 +27,81 @@ const PAGES = [
 
   for (const pageInfo of PAGES) {
     try {
-      console.log(`Loading: ${pageInfo.url}`);
+      console.log(`Scraping: ${pageInfo.url}`);
       await page.goto(pageInfo.url, { waitUntil: 'domcontentloaded', timeout: 30000 });
-
-      // WAIT FOR ELEMENTOR WIDGETS OR TABLES TO FULLY RENDER
-      await new Promise(r => setTimeout(r, 4000));
+      await new Promise(r => setTimeout(r, 3500));
 
       const matchData = await page.evaluate((info) => {
         let teamsText = '';
         let metaText = '';
 
-        // 1. EXTRACT FROM STANDARD TABLE ROWS FIRST
+        const junk = document.querySelectorAll('style, script, head, link, nav, header, footer');
+        junk.forEach(el => el.remove());
+
+        // 1. EXTRACT FROM HTML TABLES
         const rows = document.querySelectorAll('tr');
         for (const row of rows) {
-          if (row.querySelector('th')) continue; // Skip header
-          const rowText = row.textContent.replace(/\s+/g, ' ').trim();
+          if (row.querySelector('th')) continue;
+          const cells = Array.from(row.querySelectorAll('td')).map(td => td.textContent.trim());
+          const vsCell = cells.find(c => c.toLowerCase().includes(' vs ') || c.toLowerCase().includes(' v '));
           
-          if ((rowText.toLowerCase().includes(' vs ') || rowText.toLowerCase().includes(' v ')) && !rowText.toLowerCase().includes('fav move')) {
-            const cells = Array.from(row.querySelectorAll('td')).map(td => td.textContent.trim());
-            const vsCell = cells.find(c => (c.toLowerCase().includes(' vs ') || c.toLowerCase().includes(' v ')) && c.length < 90);
-            
-            teamsText = vsCell || rowText.substring(0, 80);
-            
-            // Look for date in row cells
+          if (vsCell && vsCell.length < 80) {
+            teamsText = vsCell;
             const dateCell = cells.find(c => /\d{1,2}/.test(c) || /(Mon|Tue|Wed|Thu|Fri|Sat|Sun)/i.test(c));
             if (dateCell) metaText = dateCell;
             break;
           }
         }
 
-        // 2. PARSE BODY TEXT IF TABLES ARE NOT USED
+        // 2. EXTRACT & SANITIZE FROM BODY TEXT
         if (!teamsText) {
           const bodyText = document.body.innerText.replace(/\s+/g, ' ');
 
-          // Match patterns like "Team A vs Team B"
+          // Match clean Team A vs Team B string
           const vsRegex = /([A-Za-z0-9\s]{3,35}\s(?:VS|vs|v|V)\s[A-Za-z0-9\s]{3,35})/g;
           const matches = bodyText.match(vsRegex);
 
           if (matches) {
             for (let m of matches) {
               m = m.trim();
-              if (m.length > 8 && m.length < 80 && !m.toLowerCase().includes('fixtures') && !m.toLowerCase().includes('fav move')) {
+              if (m.length > 8 && m.length < 70 && !m.toLowerCase().includes('fixtures') && !m.toLowerCase().includes('fav move')) {
                 teamsText = m;
                 break;
               }
             }
           }
 
-          // Match dates like "Saturday 26 Sept 2026" or "12/09/26"
-          const dateRegex = /((?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)?\s?\d{1,2}[\s\/\.-]+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sept|Oct|Nov|Dec|\d{1,2})[a-z]*\s?\d{0,4})/i;
+          // Match explicit date pattern (e.g. Saturday 26 Sept 2026 or Sunday 27 Sept)
+          const dateRegex = /((?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)?\s?\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sept|Oct|Nov|Dec)[a-z]*\s?\d{0,4})/i;
           const dateMatch = bodyText.match(dateRegex);
           if (dateMatch) {
             metaText = dateMatch[0].trim();
           }
         }
 
-        // 3. FALLBACKS
-        if (!teamsText) {
+        // 3. CLEAN UP NOISE & PREFIXES
+        if (teamsText) {
+          teamsText = teamsText
+            .replace(/^(COMING|SEASON|UPCOMING|\d{2}\/\d{2})\s+FIXTURE(S)?/i, '')
+            .replace(/^(EASON|EASON UPCOMING|UPCOMING FIXTURE)\s+/i, '')
+            .replace(/\d{2}\/\d{2,4}$/g, '')
+            .replace(/Meads of Melk.*$/i, '')
+            .replace(/Stanley Park.*$/i, '')
+            .replace(/Sherborne RFC.*$/i, '')
+            .trim();
+        }
+
+        if (!teamsText || teamsText.length < 5) {
           teamsText = `${info.squad} Fixtures`;
         }
-        if (!metaText) {
-          metaText = 'Check page for kickoff details';
+
+        // Clean up date string noise (removes postcodes like '12 6ES' or '26/27')
+        if (metaText) {
+          if (/^\d{2}\/\d{2,4}$/.test(metaText) || /[A-Z]{1,2}\d{1,2}\s?\d[A-Z]{2}/i.test(metaText) || metaText.length < 6) {
+            metaText = 'Check team page for kickoff time';
+          }
+        } else {
+          metaText = 'Check team page for kickoff time';
         }
 
         return {
@@ -109,5 +123,5 @@ const PAGES = [
   await browser.close();
 
   fs.writeFileSync('fixtures.json', JSON.stringify(allFixtures, null, 2));
-  console.log(`Saved ${allFixtures.length} fixtures into fixtures.json`);
+  console.log(`Saved ${allFixtures.length} clean fixtures into fixtures.json`);
 })();
