@@ -30,27 +30,40 @@ const PAGES = [
       console.log(`Scraping: ${pageInfo.url}`);
       await page.goto(pageInfo.url, { waitUntil: 'networkidle2', timeout: 30000 });
 
-      // Extract details from Elementor HTML widgets
       const widgetsData = await page.evaluate((info) => {
         const results = [];
         const widgets = document.querySelectorAll('.elementor-widget-html');
 
         widgets.forEach((widget) => {
-          const text = widget.textContent.trim();
-          if (text.toLowerCase().includes(' vs ') || text.toLowerCase().includes(' v ')) {
-            
-            // Extract team text and date meta if present
-            const teamsEl = widget.querySelector('strong') || widget.querySelector('.fixture-teams');
-            const metaEl = widget.querySelector('p') || widget.querySelector('span') || widget.querySelector('.fixture-meta');
+          // Clone node to strip unwanted internal style/script tags
+          const clone = widget.cloneNode(true);
+          const junk = clone.querySelectorAll('style, script');
+          junk.forEach(el => el.remove());
+
+          const cleanText = clone.textContent.replace(/\s+/g, ' ').trim();
+
+          if (cleanText.toLowerCase().includes(' vs ') || cleanText.toLowerCase().includes(' v ')) {
+            // Extract match title or fallback to squad name
+            const teamsEl = clone.querySelector('strong, .match-title, .fixture-teams');
+            const metaEl = clone.querySelector('.match-location, .date-header, .fixture-meta, p');
+
+            let teamsText = teamsEl ? teamsEl.textContent.trim() : '';
+            if (!teamsText || teamsText.length > 100) {
+              teamsText = `${info.squad} Fixture`;
+            }
+
+            let metaText = metaEl ? metaEl.textContent.trim() : '';
+            if (metaText.length > 120) {
+              metaText = 'Check page for details';
+            }
 
             results.push({
               squad: info.squad,
               sport: info.sport,
               badgeClass: info.badgeClass,
-              teams: teamsEl ? teamsEl.textContent.trim() : text,
-              dateStr: metaEl ? metaEl.textContent.trim() : '',
-              url: info.url,
-              scrapedAt: new Date().toISOString()
+              teams: teamsText,
+              dateStr: metaText,
+              url: info.url
             });
           }
         });
@@ -58,7 +71,10 @@ const PAGES = [
         return results;
       }, pageInfo);
 
-      allFixtures.push(...widgetsData);
+      // Only take the first upcoming valid match card per squad page
+      if (widgetsData.length > 0) {
+        allFixtures.push(widgetsData[0]);
+      }
     } catch (err) {
       console.error(`Error scraping ${pageInfo.url}:`, err.message);
     }
@@ -66,7 +82,6 @@ const PAGES = [
 
   await browser.close();
 
-  // Save compiled data to fixtures.json
   fs.writeFileSync('fixtures.json', JSON.stringify(allFixtures, null, 2));
-  console.log(`Saved ${allFixtures.length} total fixtures to fixtures.json`);
+  console.log(`Successfully compiled ${allFixtures.length} clean fixtures into fixtures.json`);
 })();
