@@ -17,8 +17,28 @@ const PAGES = [
   { squad: 'Fawns U14', sport: 'RUGBY', badgeClass: 'badge-rugby', url: 'https://melkshamnews.com/melksham-fawns-u14/' }
 ];
 
+// Helper to convert DD/MM/YY or DD/MM/YYYY to valid Date object
+function parseUkDate(str) {
+  if (!str) return null;
+  const clean = str.trim();
+
+  // Match DD/MM/YY or DD/MM/YYYY
+  const match = clean.match(/\b(\d{1,2})[\/\.-](\d{1,2})[\/\.-](\d{2,4})\b/);
+  if (match) {
+    const day = parseInt(match[1], 10);
+    const month = parseInt(match[2], 10) - 1; // 0-indexed
+    let year = parseInt(match[3], 10);
+    if (year < 100) year += 2000;
+    return new Date(year, month, day);
+  }
+
+  // Fallback to standard Date parser (handles "13 Sept 2026", "Sun, 13 Sep", etc.)
+  const d = new Date(clean);
+  return isNaN(d.getTime()) ? null : d;
+}
+
 (async () => {
-  // CALCULATE ACTIVE MONDAY TO SUNDAY WINDOW
+  // Active Week: Monday 00:00:00 to Sunday 23:59:59
   const now = new Date();
   const dayOfWeek = now.getDay();
   const distanceToMonday = (dayOfWeek === 0 ? -6 : 1 - dayOfWeek);
@@ -31,7 +51,7 @@ const PAGES = [
   sundayThisWeek.setDate(mondayThisWeek.getDate() + 6);
   sundayThisWeek.setHours(23, 59, 59, 999);
 
-  console.log(`Filtering active week: ${mondayThisWeek.toDateString()} to ${sundayThisWeek.toDateString()}`);
+  console.log(`Active Week Window: ${mondayThisWeek.toDateString()} to ${sundayThisWeek.toDateString()}`);
 
   const browser = await puppeteer.launch({
     headless: 'new',
@@ -48,7 +68,7 @@ const PAGES = [
 
       let foundFixture = null;
 
-      // 1. RUGBY ROUTE: EXTRACT & PARSE ICAL FEED DIRECTLY
+      // 1. RUGBY LOGIC: PARSE EMBEDDED ICAL LINK
       if (pageInfo.sport === 'RUGBY') {
         const icalUrl = await page.evaluate(() => {
           const links = Array.from(document.querySelectorAll('a[href], [src]'));
@@ -93,65 +113,75 @@ const PAGES = [
         }
       }
 
-      // 2. FOOTBALL ROUTE: DOM TABLE PARSER WITH SUFFIX BOUNDARIES
+      // 2. FOOTBALL LOGIC: DOM TABLE PARSER WITH UK DATE HANDLING
       if (!foundFixture) {
-        foundFixture = await page.evaluate((info, monTime, sunTime) => {
-          let rawCellText = '';
-          let dateFromCell = '';
-
+        const rawMatch = await page.evaluate(() => {
           const rows = Array.from(document.querySelectorAll('tr')).filter(r => !r.querySelector('th'));
           for (const row of rows) {
             const cells = Array.from(row.querySelectorAll('td')).map(td => td.textContent.trim());
             const teamCell = cells.find(c => (c.toLowerCase().includes(' vs ') || c.toLowerCase().includes(' v ')) && c.length < 120);
 
             if (teamCell) {
-              rawCellText = teamCell;
-              const dateCell = cells.find(c => /\b(0?[1-9]|[12][0-9]|3[01])\b/.test(c) || /(Mon|Tue|Wed|Thu|Fri|Sat|Sun)/i.test(c));
-              if (dateCell) dateFromCell = dateCell.trim();
-              break;
+              let cleanTeams = teamCell;
+              let extraVenueOrTime = '';
+
+              const teamBoundaryRegex = /^(.+?\s+(?:VS|vs|v|V)\s+.+?(?:Res|Vets|Ladies|FC|XI|XV|Town|United|City))\s+(.*)$/i;
+              const match = cleanTeams.match(teamBoundaryRegex);
+
+              if (match) {
+                cleanTeams = match[1].trim();
+                extraVenueOrTime = match[2].trim();
+              }
+
+              cleanTeams = cleanTeams.replace(/\s+[P|VMW|P-P]\b/gi, '').trim();
+
+              const dateCell = cells.find(c => /\b\d{1,2}[\/\.-]\d{1,2}[\/\.-]\d{2,4}\b/.test(c) || /\b(0?[1-9]|[12][0-9]|3[01])\b/.test(c) || /(Mon|Tue|Wed|Thu|Fri|Sat|Sun)/i.test(c));
+
+              return {
+                teams: cleanTeams,
+                rawDateStr: (dateCell || extraVenueOrTime || '').trim()
+              };
             }
           }
+          return null;
+        });
 
-          if (rawCellText) {
-            let cleanTeams = rawCellText;
-            let extraVenueOrTime = '';
+        if (rawMatch && rawMatch.teams) {
+          let isThisWeek = false;
+          let parsedDate = parseUkDate(rawMatch.rawDateStr);
 
-            // Isolate Team A vs Team B and push venues/kickoff times to subheader
-            const teamBoundaryRegex = /^(.+?\s+(?:VS|vs|v|V)\s+.+?(?:Res|Vets|Ladies|FC|XI|XV|Town|United|City))\s+(.*)$/i;
-            const match = cleanTeams.match(teamBoundaryRegex);
-
-            if (match) {
-              cleanTeams = match[1].trim();
-              extraVenueOrTime = match[2].trim();
+          if (parsedDate) {
+            if (parsedDate >= mondayThisWeek && parsedDate <= sundayThisWeek) {
+              isThisWeek = true;
             }
+          } else {
+            // Include match if listed on active weekly table
+            isThisWeek = true;
+          }
 
-            cleanTeams = cleanTeams.replace(/\s+[P|VMW|P-P]\b/gi, '').trim();
-            const finalDateStr = dateFromCell || extraVenueOrTime || 'Kickoff details on team page';
-
-            return {
-              squad: info.squad,
-              sport: info.sport,
-              badgeClass: info.badgeClass,
-              teams: cleanTeams,
-              dateStr: finalDateStr,
-              url: info.url
+          if (isThisWeek) {
+            foundFixture = {
+              squad: pageInfo.squad,
+              sport: pageInfo.sport,
+              badgeClass: pageInfo.badgeClass,
+              teams: rawMatch.teams,
+              dateStr: rawMatch.rawDateStr || 'Kickoff details on team page',
+              url: pageInfo.url
             };
           }
-
-          return null;
-        }, pageInfo, mondayThisWeek.getTime(), sundayThisWeek.getTime());
+        }
       }
 
       if (foundFixture) {
         activeFixtures.push(foundFixture);
       }
     } catch (err) {
-      console.error(`Error scraping ${pageInfo.url}:`, err.message);
+      console.error(`Error processing ${pageInfo.url}:`, err.message);
     }
   }
 
   await browser.close();
 
   fs.writeFileSync('fixtures.json', JSON.stringify(activeFixtures, null, 2));
-  console.log(`Saved ${activeFixtures.length} clean active fixtures into fixtures.json`);
+  console.log(`Successfully compiled ${activeFixtures.length} clean fixtures into fixtures.json`);
 })();
