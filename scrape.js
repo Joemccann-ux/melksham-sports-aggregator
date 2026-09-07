@@ -29,47 +29,51 @@ const PAGES = [
     try {
       console.log(`Scraping: ${pageInfo.url}`);
       await page.goto(pageInfo.url, { waitUntil: 'domcontentloaded', timeout: 30000 });
-      await new Promise(r => setTimeout(r, 3500));
+      await new Promise(r => setTimeout(r, 4000));
 
       const matchData = await page.evaluate((info) => {
         let cleanMatchTitle = '';
         let cleanMetaDate = '';
 
-        // Clean out junk tags
+        // Strip non-content tags
         const junk = document.querySelectorAll('style, script, head, link, nav, header, footer');
         junk.forEach(el => el.remove());
 
         const bodyText = document.body.innerText.replace(/\s+/g, ' ');
 
-        // Find "Team A vs Team B" patterns
-        const vsRegex = /([A-Za-z0-9\s]{3,35}\s(?:VS|vs|v|V)\s[A-Za-z0-9\s]{3,35})/g;
+        // 1. ISOLATE "TEAM A VS TEAM B" PATTERN ONLY
+        const vsRegex = /([A-Za-z0-9\s.]{3,35}\s(?:VS|vs|v|V)\s[A-Za-z0-9\s.]{3,35})/g;
         const matches = bodyText.match(vsRegex);
 
         if (matches && matches.length > 0) {
           for (let rawMatch of matches) {
-            let str = rawMatch.trim()
-              .replace(/^(COMING|SEASON|UPCOMING|EASON|EASON UPCOMING|\d{2}\/\d{2})\s*(FIXTURE(S)?)?/i, '')
-              .replace(/\d{2}\/\d{2,4}$/g, '')
-              .trim();
+            let str = rawMatch.trim();
 
-            if (str.length > 8 && str.length < 75 && !str.toLowerCase().includes('fav move')) {
+            // Strip noise words from start
+            str = str.replace(/^(COMING|SEASON|UPCOMING|EASON|EASON UPCOMING|\d{2}\/\d{2}|\d{2})\s*(FIXTURE(S)?)?/i, '')
+                     .replace(/^Upcoming Fixture\s+/i, '')
+                     .trim();
+
+            // Cut off text cleanly at venue/date keywords or trailing numbers/days
+            str = str.split(/\s+(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|Meads|Stanley|Sherborne|Melksham Rugby Club|Sports Ground|P\s+Meads|\d{2}\/|\d{1,2}\s+[A-Z0-9]{3})/i)[0].trim();
+
+            if (str.length > 8 && str.length < 65 && !str.toLowerCase().includes('fav move')) {
               cleanMatchTitle = str;
               break;
             }
           }
         }
 
-        // Extract clean date pattern (e.g., "Saturday 26 Sept 2026" or "Sunday 27 Sept")
+        // 2. ISOLATE DATE PATTERN
         const dateRegex = /((?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\s?\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sept|Oct|Nov|Dec)[a-z]*\s?\d{0,4})/i;
         const dateMatch = bodyText.match(dateRegex);
-
         if (dateMatch) {
           cleanMetaDate = dateMatch[0].trim();
         }
 
-        // Fallback cleanup if text extraction wasn't formatted cleanly
+        // 3. FALLBACKS
         if (!cleanMatchTitle || cleanMatchTitle.length < 5) {
-          cleanMatchTitle = `${info.squad}`;
+          cleanMatchTitle = info.squad;
           cleanMetaDate = 'No fixture scheduled this week';
         } else if (!cleanMetaDate) {
           cleanMetaDate = 'Check team page for kickoff time';
