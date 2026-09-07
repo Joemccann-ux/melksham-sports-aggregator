@@ -18,7 +18,7 @@ const PAGES = [
 ];
 
 (async () => {
-  // ACTIVE MONDAY TO SUNDAY WINDOW
+  // CALCULATE ACTIVE MONDAY TO SUNDAY WINDOW
   const now = new Date();
   const dayOfWeek = now.getDay();
   const distanceToMonday = (dayOfWeek === 0 ? -6 : 1 - dayOfWeek);
@@ -48,7 +48,7 @@ const PAGES = [
 
       let foundFixture = null;
 
-      // 1. RUGBY LOGIC: PARSE EMBEDDED ICAL LINK DIRECTLY FROM PAGE WIDGET
+      // 1. RUGBY ROUTE: EXTRACT & PARSE ICAL FEED DIRECTLY
       if (pageInfo.sport === 'RUGBY') {
         const icalUrl = await page.evaluate(() => {
           const links = Array.from(document.querySelectorAll('a[href], [src]'));
@@ -93,12 +93,11 @@ const PAGES = [
         }
       }
 
-      // 2. FOOTBALL LOGIC: EXTRACT CLEAN TEAM MATCHUP & SEPARATE VENUE/TIME DETAILS
+      // 2. FOOTBALL ROUTE: DOM TABLE PARSER WITH SUFFIX BOUNDARIES
       if (!foundFixture) {
         foundFixture = await page.evaluate((info, monTime, sunTime) => {
-          let rawTeams = '';
-          let extractedMeta = '';
-          let isThisWeek = false;
+          let rawCellText = '';
+          let dateFromCell = '';
 
           const rows = Array.from(document.querySelectorAll('tr')).filter(r => !r.querySelector('th'));
           for (const row of rows) {
@@ -106,51 +105,37 @@ const PAGES = [
             const teamCell = cells.find(c => (c.toLowerCase().includes(' vs ') || c.toLowerCase().includes(' v ')) && c.length < 120);
 
             if (teamCell) {
-              rawTeams = teamCell;
-
+              rawCellText = teamCell;
               const dateCell = cells.find(c => /\b(0?[1-9]|[12][0-9]|3[01])\b/.test(c) || /(Mon|Tue|Wed|Thu|Fri|Sat|Sun)/i.test(c));
-              if (dateCell) extractedMeta = dateCell.trim();
+              if (dateCell) dateFromCell = dateCell.trim();
               break;
             }
           }
 
-          if (rawTeams) {
-            // Split out venue or time strings appended to team names
-            let cleanTeams = rawTeams
-              .replace(/^(COMING|SEASON|UPCOMING|EASON|\d{2}\/\d{2})\s*(FIXTURE(S)?)?/i, '')
-              .replace(/\s+P\b|\s+VMW\b/gi, '');
+          if (rawCellText) {
+            let cleanTeams = rawCellText;
+            let extraVenueOrTime = '';
 
-            // If time or venue exists inside team text string (e.g. "Cinder Lane • 15:00")
-            const extraDetailMatch = cleanTeams.match(/\s+([A-Za-z0-9\s]+•\s*\d{2}:\d{2}.*)$/);
-            if (extraDetailMatch) {
-              if (!extractedMeta) extractedMeta = extraDetailMatch[1].trim();
-              cleanTeams = cleanTeams.replace(extraDetailMatch[0], '').trim();
+            // Isolate Team A vs Team B and push venues/kickoff times to subheader
+            const teamBoundaryRegex = /^(.+?\s+(?:VS|vs|v|V)\s+.+?(?:Res|Vets|Ladies|FC|XI|XV|Town|United|City))\s+(.*)$/i;
+            const match = cleanTeams.match(teamBoundaryRegex);
+
+            if (match) {
+              cleanTeams = match[1].trim();
+              extraVenueOrTime = match[2].trim();
             }
 
-            // Verify week match
-            if (extractedMeta) {
-              const parsedDate = new Date(extractedMeta);
-              if (!isNaN(parsedDate.getTime())) {
-                if (parsedDate >= new Date(monTime) && parsedDate <= new Date(sunTime)) {
-                  isThisWeek = true;
-                }
-              } else {
-                isThisWeek = true;
-              }
-            } else {
-              isThisWeek = true;
-            }
+            cleanTeams = cleanTeams.replace(/\s+[P|VMW|P-P]\b/gi, '').trim();
+            const finalDateStr = dateFromCell || extraVenueOrTime || 'Kickoff details on team page';
 
-            if (isThisWeek) {
-              return {
-                squad: info.squad,
-                sport: info.sport,
-                badgeClass: info.badgeClass,
-                teams: cleanTeams,
-                dateStr: extractedMeta || 'Kickoff details on team page',
-                url: info.url
-              };
-            }
+            return {
+              squad: info.squad,
+              sport: info.sport,
+              badgeClass: info.badgeClass,
+              teams: cleanTeams,
+              dateStr: finalDateStr,
+              url: info.url
+            };
           }
 
           return null;
@@ -168,5 +153,5 @@ const PAGES = [
   await browser.close();
 
   fs.writeFileSync('fixtures.json', JSON.stringify(activeFixtures, null, 2));
-  console.log(`Successfully compiled ${activeFixtures.length} clean fixtures into fixtures.json`);
+  console.log(`Saved ${activeFixtures.length} clean active fixtures into fixtures.json`);
 })();
