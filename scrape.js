@@ -30,58 +30,74 @@ const PAGES = [
       console.log(`Scraping: ${pageInfo.url}`);
       await page.goto(pageInfo.url, { waitUntil: 'networkidle2', timeout: 30000 });
 
-      const widgetsData = await page.evaluate((info) => {
-        const results = [];
-        const widgets = document.querySelectorAll('.elementor-widget-html');
+      const squadFixtures = await page.evaluate((info) => {
+        const matches = [];
 
-        widgets.forEach((widget) => {
-          // Clone node to strip unwanted internal style/script tags
-          const clone = widget.cloneNode(true);
-          const junk = clone.querySelectorAll('style, script');
-          junk.forEach(el => el.remove());
+        // 1. Target specific match cards inside sub-pages first
+        const matchCards = document.querySelectorAll('.match-card, .fixture-card, .fixture-item');
 
-          const cleanText = clone.textContent.replace(/\s+/g, ' ').trim();
+        if (matchCards.length > 0) {
+          matchCards.forEach((card) => {
+            const titleEl = card.querySelector('.match-title, .fixture-teams, strong');
+            const metaEl = card.querySelector('.match-location, .date-header, .fixture-meta');
 
-          if (cleanText.toLowerCase().includes(' vs ') || cleanText.toLowerCase().includes(' v ')) {
-            // Extract match title or fallback to squad name
-            const teamsEl = clone.querySelector('strong, .match-title, .fixture-teams');
-            const metaEl = clone.querySelector('.match-location, .date-header, .fixture-meta, p');
-
-            let teamsText = teamsEl ? teamsEl.textContent.trim() : '';
-            if (!teamsText || teamsText.length > 100) {
-              teamsText = `${info.squad} Fixture`;
+            if (titleEl) {
+              matches.push({
+                squad: info.squad,
+                sport: info.sport,
+                badgeClass: info.badgeClass,
+                teams: titleEl.textContent.trim(),
+                dateStr: metaEl ? metaEl.textContent.trim() : '',
+                url: info.url
+              });
             }
+          });
+        } else {
+          // 2. Fallback for custom Elementor HTML widgets
+          const widgets = document.querySelectorAll('.elementor-widget-html');
+          widgets.forEach((widget) => {
+            const clone = widget.cloneNode(true);
+            
+            // Strictly delete all internal CSS or JS elements
+            const garbage = clone.querySelectorAll('style, script, head, link');
+            garbage.forEach(el => el.remove());
 
-            let metaText = metaEl ? metaEl.textContent.trim() : '';
-            if (metaText.length > 120) {
-              metaText = 'Check page for details';
+            const cleanText = clone.textContent.replace(/\s+/g, ' ').trim();
+
+            if (cleanText.toLowerCase().includes(' vs ') || cleanText.toLowerCase().includes(' v ')) {
+              const strongEl = clone.querySelector('strong');
+              
+              let teamsText = strongEl ? strongEl.textContent.trim() : '';
+              if (!teamsText || teamsText.length > 80) {
+                teamsText = `${info.squad} Match`;
+              }
+
+              matches.push({
+                squad: info.squad,
+                sport: info.sport,
+                badgeClass: info.badgeClass,
+                teams: teamsText,
+                dateStr: 'Check team page for kickoff time',
+                url: info.url
+              });
             }
+          });
+        }
 
-            results.push({
-              squad: info.squad,
-              sport: info.sport,
-              badgeClass: info.badgeClass,
-              teams: teamsText,
-              dateStr: metaText,
-              url: info.url
-            });
-          }
-        });
-
-        return results;
+        return matches;
       }, pageInfo);
 
-      // Only take the first upcoming valid match card per squad page
-      if (widgetsData.length > 0) {
-        allFixtures.push(widgetsData[0]);
+      // Take only the first match per squad
+      if (squadFixtures.length > 0) {
+        allFixtures.push(squadFixtures[0]);
       }
     } catch (err) {
-      console.error(`Error scraping ${pageInfo.url}:`, err.message);
+      console.error(`Error on ${pageInfo.url}:`, err.message);
     }
   }
 
   await browser.close();
 
   fs.writeFileSync('fixtures.json', JSON.stringify(allFixtures, null, 2));
-  console.log(`Successfully compiled ${allFixtures.length} clean fixtures into fixtures.json`);
+  console.log(`Successfully compiled ${allFixtures.length} clean fixtures.`);
 })();
