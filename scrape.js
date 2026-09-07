@@ -27,64 +27,67 @@ const PAGES = [
 
   for (const pageInfo of PAGES) {
     try {
-      console.log(`Scraping: ${pageInfo.url}`);
-      await page.goto(pageInfo.url, { waitUntil: 'networkidle2', timeout: 30000 });
+      console.log(`Loading: ${pageInfo.url}`);
+      await page.goto(pageInfo.url, { waitUntil: 'domcontentloaded', timeout: 30000 });
+
+      // WAIT FOR ELEMENTOR WIDGETS OR TABLES TO FULLY RENDER
+      await new Promise(r => setTimeout(r, 4000));
 
       const matchData = await page.evaluate((info) => {
         let teamsText = '';
         let metaText = '';
 
-        // Clean out garbage elements
-        const junk = document.querySelectorAll('style, script, head, link, nav, header, footer');
-        junk.forEach(el => el.remove());
-
-        // STAGE 1: Check HTML Tables
-        const tableRows = document.querySelectorAll('table tr');
-        for (const row of tableRows) {
-          if (row.querySelector('th')) continue;
-          const cells = Array.from(row.querySelectorAll('td')).map(td => td.textContent.trim());
-          const vsCell = cells.find(c => c.toLowerCase().includes(' vs ') || c.toLowerCase().includes(' v '));
-          if (vsCell && vsCell.length < 80) {
-            teamsText = vsCell;
+        // 1. EXTRACT FROM STANDARD TABLE ROWS FIRST
+        const rows = document.querySelectorAll('tr');
+        for (const row of rows) {
+          if (row.querySelector('th')) continue; // Skip header
+          const rowText = row.textContent.replace(/\s+/g, ' ').trim();
+          
+          if ((rowText.toLowerCase().includes(' vs ') || rowText.toLowerCase().includes(' v ')) && !rowText.toLowerCase().includes('fav move')) {
+            const cells = Array.from(row.querySelectorAll('td')).map(td => td.textContent.trim());
+            const vsCell = cells.find(c => (c.toLowerCase().includes(' vs ') || c.toLowerCase().includes(' v ')) && c.length < 90);
+            
+            teamsText = vsCell || rowText.substring(0, 80);
+            
+            // Look for date in row cells
             const dateCell = cells.find(c => /\d{1,2}/.test(c) || /(Mon|Tue|Wed|Thu|Fri|Sat|Sun)/i.test(c));
             if (dateCell) metaText = dateCell;
             break;
           }
         }
 
-        // STAGE 2: Parse Third-Party / RFU Widgets using Regex
+        // 2. PARSE BODY TEXT IF TABLES ARE NOT USED
         if (!teamsText) {
-          const bodyText = document.body.textContent.replace(/\s+/g, ' ').trim();
+          const bodyText = document.body.innerText.replace(/\s+/g, ' ');
 
-          // Regex to capture "Team A VS Team B" up to a date or location
-          const vsRegex = /([A-Za-z0-9\s]{3,40}\s(?:VS|vs|v|V)\s[A-Za-z0-9\s]{3,40})/g;
+          // Match patterns like "Team A vs Team B"
+          const vsRegex = /([A-Za-z0-9\s]{3,35}\s(?:VS|vs|v|V)\s[A-Za-z0-9\s]{3,35})/g;
           const matches = bodyText.match(vsRegex);
 
-          if (matches && matches.length > 0) {
+          if (matches) {
             for (let m of matches) {
               m = m.trim();
-              // Ignore generic titles or page headings
-              if (m.length > 8 && m.length < 70 && !m.toLowerCase().includes('fixtures') && !m.toLowerCase().includes('results') && !m.toLowerCase().includes('fav move')) {
+              if (m.length > 8 && m.length < 80 && !m.toLowerCase().includes('fixtures') && !m.toLowerCase().includes('fav move')) {
                 teamsText = m;
                 break;
               }
             }
           }
 
-          // Isolate first date string pattern (e.g., "Sunday 27 Sept 2026" or "26 Sept 2026")
-          const dateRegex = /((?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)?\s?\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sept|Oct|Nov|Dec)[a-z]*\s?\d{0,4})/i;
+          // Match dates like "Saturday 26 Sept 2026" or "12/09/26"
+          const dateRegex = /((?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)?\s?\d{1,2}[\s\/\.-]+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sept|Oct|Nov|Dec|\d{1,2})[a-z]*\s?\d{0,4})/i;
           const dateMatch = bodyText.match(dateRegex);
           if (dateMatch) {
             metaText = dateMatch[0].trim();
           }
         }
 
-        // STAGE 3: Clean Fallback
+        // 3. FALLBACKS
         if (!teamsText) {
           teamsText = `${info.squad} Fixtures`;
         }
         if (!metaText) {
-          metaText = 'Check page for kickoff time';
+          metaText = 'Check page for kickoff details';
         }
 
         return {
@@ -97,9 +100,7 @@ const PAGES = [
         };
       }, pageInfo);
 
-      if (matchData) {
-        allFixtures.push(matchData);
-      }
+      allFixtures.push(matchData);
     } catch (err) {
       console.error(`Error scraping ${pageInfo.url}:`, err.message);
     }
@@ -108,5 +109,5 @@ const PAGES = [
   await browser.close();
 
   fs.writeFileSync('fixtures.json', JSON.stringify(allFixtures, null, 2));
-  console.log(`Saved ${allFixtures.length} clean fixtures into fixtures.json`);
+  console.log(`Saved ${allFixtures.length} fixtures into fixtures.json`);
 })();
