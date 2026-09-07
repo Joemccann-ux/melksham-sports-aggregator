@@ -32,84 +32,55 @@ const PAGES = [
       await new Promise(r => setTimeout(r, 3500));
 
       const matchData = await page.evaluate((info) => {
-        let teamsText = '';
-        let metaText = '';
+        let cleanMatchTitle = '';
+        let cleanMetaDate = '';
 
+        // Clean out junk tags
         const junk = document.querySelectorAll('style, script, head, link, nav, header, footer');
         junk.forEach(el => el.remove());
 
-        // 1. EXTRACT FROM HTML TABLES
-        const rows = document.querySelectorAll('tr');
-        for (const row of rows) {
-          if (row.querySelector('th')) continue;
-          const cells = Array.from(row.querySelectorAll('td')).map(td => td.textContent.trim());
-          const vsCell = cells.find(c => c.toLowerCase().includes(' vs ') || c.toLowerCase().includes(' v '));
-          
-          if (vsCell && vsCell.length < 80) {
-            teamsText = vsCell;
-            const dateCell = cells.find(c => /\d{1,2}/.test(c) || /(Mon|Tue|Wed|Thu|Fri|Sat|Sun)/i.test(c));
-            if (dateCell) metaText = dateCell;
-            break;
-          }
-        }
+        const bodyText = document.body.innerText.replace(/\s+/g, ' ');
 
-        // 2. EXTRACT & SANITIZE FROM BODY TEXT
-        if (!teamsText) {
-          const bodyText = document.body.innerText.replace(/\s+/g, ' ');
+        // Find "Team A vs Team B" patterns
+        const vsRegex = /([A-Za-z0-9\s]{3,35}\s(?:VS|vs|v|V)\s[A-Za-z0-9\s]{3,35})/g;
+        const matches = bodyText.match(vsRegex);
 
-          // Match clean Team A vs Team B string
-          const vsRegex = /([A-Za-z0-9\s]{3,35}\s(?:VS|vs|v|V)\s[A-Za-z0-9\s]{3,35})/g;
-          const matches = bodyText.match(vsRegex);
+        if (matches && matches.length > 0) {
+          for (let rawMatch of matches) {
+            let str = rawMatch.trim()
+              .replace(/^(COMING|SEASON|UPCOMING|EASON|EASON UPCOMING|\d{2}\/\d{2})\s*(FIXTURE(S)?)?/i, '')
+              .replace(/\d{2}\/\d{2,4}$/g, '')
+              .trim();
 
-          if (matches) {
-            for (let m of matches) {
-              m = m.trim();
-              if (m.length > 8 && m.length < 70 && !m.toLowerCase().includes('fixtures') && !m.toLowerCase().includes('fav move')) {
-                teamsText = m;
-                break;
-              }
+            if (str.length > 8 && str.length < 75 && !str.toLowerCase().includes('fav move')) {
+              cleanMatchTitle = str;
+              break;
             }
           }
-
-          // Match explicit date pattern (e.g. Saturday 26 Sept 2026 or Sunday 27 Sept)
-          const dateRegex = /((?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)?\s?\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sept|Oct|Nov|Dec)[a-z]*\s?\d{0,4})/i;
-          const dateMatch = bodyText.match(dateRegex);
-          if (dateMatch) {
-            metaText = dateMatch[0].trim();
-          }
         }
 
-        // 3. CLEAN UP NOISE & PREFIXES
-        if (teamsText) {
-          teamsText = teamsText
-            .replace(/^(COMING|SEASON|UPCOMING|\d{2}\/\d{2})\s+FIXTURE(S)?/i, '')
-            .replace(/^(EASON|EASON UPCOMING|UPCOMING FIXTURE)\s+/i, '')
-            .replace(/\d{2}\/\d{2,4}$/g, '')
-            .replace(/Meads of Melk.*$/i, '')
-            .replace(/Stanley Park.*$/i, '')
-            .replace(/Sherborne RFC.*$/i, '')
-            .trim();
+        // Extract clean date pattern (e.g., "Saturday 26 Sept 2026" or "Sunday 27 Sept")
+        const dateRegex = /((?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\s?\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sept|Oct|Nov|Dec)[a-z]*\s?\d{0,4})/i;
+        const dateMatch = bodyText.match(dateRegex);
+
+        if (dateMatch) {
+          cleanMetaDate = dateMatch[0].trim();
         }
 
-        if (!teamsText || teamsText.length < 5) {
-          teamsText = `${info.squad} Fixtures`;
-        }
-
-        // Clean up date string noise (removes postcodes like '12 6ES' or '26/27')
-        if (metaText) {
-          if (/^\d{2}\/\d{2,4}$/.test(metaText) || /[A-Z]{1,2}\d{1,2}\s?\d[A-Z]{2}/i.test(metaText) || metaText.length < 6) {
-            metaText = 'Check team page for kickoff time';
-          }
-        } else {
-          metaText = 'Check team page for kickoff time';
+        // Fallback cleanup if text extraction wasn't formatted cleanly
+        if (!cleanMatchTitle || cleanMatchTitle.length < 5) {
+          cleanMatchTitle = `${info.squad}`;
+          cleanMetaDate = 'No fixture scheduled this week';
+        } else if (!cleanMetaDate) {
+          cleanMetaDate = 'Check team page for kickoff time';
         }
 
         return {
           squad: info.squad,
           sport: info.sport,
           badgeClass: info.badgeClass,
-          teams: teamsText,
-          dateStr: metaText,
+          teams: cleanMatchTitle,
+          dateStr: cleanMetaDate,
           url: info.url
         };
       }, pageInfo);
