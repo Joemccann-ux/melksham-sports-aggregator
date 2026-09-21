@@ -1,10 +1,18 @@
 [
   {
+    "squad": "U18s Academy",
+    "sport": "RUGBY",
+    "badgeClass": "badge-rugby",
+    "teams": "🏉 Melksham Academy vs Weston-super-Mare RFC U18W Roses",
+    "dateStr": "Sun, 27 Sept",
+    "url": "https://melkshamnews.com/melksham-u18s-academy/"
+  },
+  {
     "squad": "Fawns U14",
     "sport": "RUGBY",
     "badgeClass": "badge-rugby",
-    "teams": "South Bristol Grirls – U14s Fawns",
-    "dateStr": "Sun, 20 Sept",
+    "teams": "U14s Fawns – Royal Wotton Bassett",
+    "dateStr": "Fri, 25 Sept",
     "url": "https://melkshamnews.com/melksham-fawns-u14/"
   }
 ]
