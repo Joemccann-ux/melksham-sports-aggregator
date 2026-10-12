@@ -1,10 +1,18 @@
 [
   {
+    "squad": "U18s Academy",
+    "sport": "RUGBY",
+    "badgeClass": "badge-rugby",
+    "teams": "🏉 Chew Valley RFC U18W vs Melksham Academy",
+    "dateStr": "Sun, 18 Oct",
+    "url": "https://melkshamnews.com/melksham-u18s-academy/"
+  },
+  {
     "squad": "Fawns U14",
     "sport": "RUGBY",
     "badgeClass": "badge-rugby",
-    "teams": "Friday Night Lights - U14s Fawns – Bath U14s",
-    "dateStr": "Fri, 9 Oct",
+    "teams": "U14s Fawns – Tetbury",
+    "dateStr": "Sun, 18 Oct",
     "url": "https://melkshamnews.com/melksham-fawns-u14/"
   }
 ]
