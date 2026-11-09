@@ -1,1 +1,18 @@
-[]
+[
+  {
+    "squad": "U18s Academy",
+    "sport": "RUGBY",
+    "badgeClass": "badge-rugby",
+    "teams": "🏉 Melksham Academy vs North Dorset U18 Girls",
+    "dateStr": "Sun, 15 Nov",
+    "url": "https://melkshamnews.com/melksham-u18s-academy/"
+  },
+  {
+    "squad": "Fawns U14",
+    "sport": "RUGBY",
+    "badgeClass": "badge-rugby",
+    "teams": "5 valleys Valkyries – U14s Fawns",
+    "dateStr": "Sun, 15 Nov",
+    "url": "https://melkshamnews.com/melksham-fawns-u14/"
+  }
+]
